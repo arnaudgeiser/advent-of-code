@@ -7,44 +7,33 @@
 (def deltas [[0 1] [1 0] [-1 0] [0 -1]])
 
 (defn neighbors [[x1 y1]]
-  (->> deltas
-       (map (fn [[x2 y2]] [(+ x1 x2) (+ y1 y2)]))
-       (filter #(every? nat-int? %))))
+  (map (fn [[x2 y2]] [(+ x1 x2) (+ y1 y2)]) deltas))
 
-(defn matrix [line]
+(defn str->ints [line]
   (->> (str/split line #"")
        (mapv #(Integer/parseInt %))))
 
-(defn map-neighbors [coll]
-  (for [i (range (count coll))
-        j (range (count (nth coll i)))]
-    (let [value (get-in coll [i j])
-          neigh (neighbors [i j])
-          values (filter some? (map #(get-in coll %) neigh))]
-      [value values])))
-
-(defn solve1 []
-  (->> content
-       (mapv matrix)
-       (map-neighbors)
-       (filter (fn [[v values]] (every? #(< v %) values)))
-       (map (comp inc first))
-       (reduce +)))
-
-(solve1)
-
-(defn map-neighbors2 [coll]
+(defn coords [coll]
   (for [i (range (count coll))
         j (range (count (nth coll i)))]
     [i j]))
 
-(defn neighbors2 [[x1 y1]]
-  (->> deltas
-       (map (fn [[x2 y2]] [(+ x1 x2) (+ y1 y2)]))
-       (filter #(every? nat-int? %))))
+(defn solve1 []
+  (let [matrix (mapv str->ints content)]
+    (->> matrix
+         (coords)
+         (filter (fn [coord]
+                   (let [get-value #(get-in matrix % 9)
+                         value (get-value coord)]
+                     (every? (fn [n] (< value (get-value n))) (neighbors coord)))))
+         (map #(get-in matrix % 9))
+         (map inc)
+         (reduce +))))
+
+(solve1)
 
 (defn explore [matrix position]
-  (let [neigh (neighbors2 position)
+  (let [neigh (neighbors position)
         eligible? #(< (get-in matrix position) (get-in matrix % 9) 9)]
     (->> neigh
          (filter eligible?)
@@ -52,9 +41,9 @@
          (reduce conj #{position}))))
 
 (defn solve2 []
-  (let [matrix (mapv matrix content)]
+  (let [matrix (mapv str->ints content)]
     (->> matrix
-         (map-neighbors2)
+         (coords)
          (map (partial explore matrix))
          (map count)
          (sort >)
