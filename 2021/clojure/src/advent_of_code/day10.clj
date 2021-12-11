@@ -1,4 +1,4 @@
-(ns advent-of-code.day9
+(ns advent-of-code.day10
   (:require [advent-of-code.core :refer [puzzle]]
             [clojure.set :as set]))
 
