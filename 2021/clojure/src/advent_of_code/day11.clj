@@ -81,4 +81,16 @@
    "5283751526"]
   )
 
+(defn solve2 [matrix]
+  (loop [i 0
+         matrix matrix]
+    (if (every? zero? (mapcat identity matrix))
+      i
+      (let [new-matrix (do-step matrix)]
+        (recur (inc i)
+               new-matrix)))))
+
+
 (comment (solve1 (mapv str->ints content)))
+
+(solve2 (map str->ints content))
