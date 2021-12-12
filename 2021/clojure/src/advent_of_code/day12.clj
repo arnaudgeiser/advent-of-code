@@ -12,7 +12,9 @@
   (reduce (fn [acc [s e]]
             (-> acc
                 (update s (fnil conj []) e)
-                (update e (fnil conj []) s))) {} paths))
+                (update e (fnil conj []) s)))
+          {}
+          paths))
 
 (defn small-cave? [node]
   (= node (.toLowerCase node)))
@@ -32,16 +34,13 @@
 
 (defn solver [eligible-caves-fn path paths cavern]
   (if (= (last path) "end")
-    paths
+    (conj paths path)
     (let [possible-caves (get cavern (last path))
           eligible-caves (eligible-caves-fn path possible-caves)]
       (if (empty? eligible-caves)
         paths
         (reduce (fn [paths cave]
-                  (solver eligible-caves-fn
-                          (conj path cave)
-                          (conj paths (conj path cave))
-                          cavern))
+                  (solver eligible-caves-fn (conj path cave) paths cavern))
                 paths
                 eligible-caves)))))
 
