@@ -19,12 +19,12 @@
 (defn small-cave? [node]
   (= node (.toLowerCase node)))
 
-(defn remove-small-caves [cave possible-caves]
-  (let [small-caves (set (filter small-cave? cave))]
+(defn remove-small-caves [path possible-caves]
+  (let [small-caves (set (filter small-cave? path))]
     (set/difference (set possible-caves) small-caves)))
 
-(defn remove-small-caves-twice [cave possible-caves]
-  (let [small-caves (filter small-cave? cave)
+(defn remove-small-caves-twice [path possible-caves]
+  (let [small-caves (filter small-cave? path)
         two-small-caves (contains? (set/map-invert (frequencies small-caves)) 2)]
     (disj
      (if two-small-caves
