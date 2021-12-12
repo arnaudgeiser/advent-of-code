@@ -49,7 +49,6 @@
        split-paths
        build-cavern
        (solver eligible-caves-fn ["start"] #{})
-       (filter #(= (last %) "end"))
        count))
 
 (def solve1 (partial solve remove-small-caves))
