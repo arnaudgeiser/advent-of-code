@@ -38,15 +38,6 @@
         max-y (max-for-axis "x" folds)]
     (reduce #(assoc-in %1 %2 1) (init-dots (inc max-x) (inc max-y)) dots)))
 
-(defn reverse-top [dots]
-  (->> dots
-       (apply map vector)
-       (map reverse)
-       (apply map vector)))
-
-(defn reverse-left [dots]
-  (mapv reverse dots))
-
 (defn split-at-y [x dots]
   (let [[fold fold2] (split-at x dots)]
     [fold (reverse fold2)]))
