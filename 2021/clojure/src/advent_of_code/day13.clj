@@ -7,21 +7,16 @@
 (defn parse-dots [line]
   (reverse (mapv #(Integer/parseInt %) (str/split line #","))))
 
-(defn parse-fold [line]
-  (let [[_ x v] (re-find #"fold along ([xy])=(\d+)" line)]
-    [x (Integer/parseInt v)]))
-
 (defn parse-instructions [lines]
-  (reduce (fn [acc line]
-            (if (empty? line)
-              acc
-              (let [fold? (re-find #"fold along" line)]
-                (if fold?
-                  (update acc :folds conj (parse-fold line))
-                  (update acc :dots conj (parse-dots line))))))
-          {:dots []
-           :folds []}
-          lines))
+  (->> lines
+       (remove str/blank?)
+       (reduce (fn [acc line]
+                 (let [[_ axis at] (re-find #"fold along ([xy])=(\d+)" line)]
+                   (if axis
+                     (update acc :folds conj [axis (parse-long at)])
+                     (update acc :dots conj (parse-dots line)))))
+               {:dots []
+                :folds []})))
 
 (defn init-dots [max-x max-y]
   (into [] (repeat max-x (mapv (constantly 0) (range max-y)))))
