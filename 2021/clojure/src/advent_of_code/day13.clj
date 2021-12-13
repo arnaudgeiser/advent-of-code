@@ -5,7 +5,7 @@
 (def content (puzzle 13))
 
 (defn parse-dots [line]
-  (reverse (mapv #(Integer/parseInt %) (str/split line #","))))
+  (reverse (mapv parse-long (str/split line #","))))
 
 (defn parse-instructions [lines]
   (->> lines
