@@ -4,9 +4,10 @@
 
 (def content (puzzle 14))
 
+(def template (first content))
+
 (def initial
-  (->> content
-       first
+  (->> template
        (#(str/split % #""))
        (partition 2 1)
        (mapv str/join)
@@ -21,22 +22,15 @@
 
 (defn step [polymer]
   (reduce (fn [acc [pair nb]]
-            (let [m (get mapping pair)]
-              (reduce (fn [acc m] (update acc m (fnil + 0) nb)) acc m)))
+            (let [pairs (get mapping pair)]
+              (reduce (fn [acc m] (update acc m (fnil + 0) nb)) acc pairs)))
           {} polymer))
 
-(defn execute [nb-steps]
-  (loop [i nb-steps
-         result initial]
-    (if (= i 0)
-      result
-      (recur (dec i) (step result)))))
-
 (defn solve [nb-steps]
-  (->> (execute nb-steps)
-       (reduce (fn [acc [[_ v] nb]]
-                 (update acc v (fnil + 0) nb))
-               {\N 1})
+  (->> (nth (iterate step initial) nb-steps)
+       (reduce (fn [acc [[_ letter] nb]]
+                 (update acc letter (fnil + 0) nb))
+               {(first template) 1})
        (vals)
        (sort >)
        ((juxt first last))
