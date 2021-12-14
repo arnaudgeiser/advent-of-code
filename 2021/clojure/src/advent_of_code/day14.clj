@@ -30,7 +30,7 @@
   (->> (nth (iterate step initial) nb-steps)
        (reduce (fn [acc [[_ letter] nb]]
                  (update acc letter (fnil + 0) nb))
-               {(first template) 1})
+               {})
        (vals)
        (sort >)
        ((juxt first last))
