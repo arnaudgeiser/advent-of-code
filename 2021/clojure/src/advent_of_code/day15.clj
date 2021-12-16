@@ -25,7 +25,9 @@
     (fn [[x1 y1]]
       (->> deltas
            (map (fn [[x2 y2]] [(+ x1 x2) (+ y1 y2)]))
-           (remove (fn [[x y :as pos]] (or (> x (first goal)) (> y (last goal)) (some neg-int? pos))))
+           (remove (fn [[x y :as pos]] (or (> x (first goal))
+                                           (> y (last goal))
+                                           (some neg-int? pos))))
            (map (juxt identity (partial get cost-by-position)))))))
 
 (defn solve [adjacents-fn]
