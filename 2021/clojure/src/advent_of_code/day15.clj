@@ -1,6 +1,5 @@
 (ns advent-of-code.day15
-  (:require [advent-of-code.core :refer [puzzle]]
-            [clojure.string :as str]))
+  (:require [advent-of-code.core :refer [puzzle]]))
 
 (def content (puzzle 15))
 
@@ -14,20 +13,20 @@
   (->> content
        (mapv (fn [line] (mapv #(parse-long (str %)) line)))))
 
-(defn mapping [cave]
+(defn map-cost [cave]
   (->> cave
-       (map-indexed (fn [i v] (map-indexed (fn [i2 v] [[i i2] v]) v)))
+       (map-indexed (fn [x v] (map-indexed (fn [y v] [[x y] v]) v)))
        (mapcat identity)
        (into {})))
 
 (defn adjacents-fn [cave]
-  (let [mapping (mapping cave)
+  (let [cost-by-position (map-cost cave)
         goal (goal cave)]
     (fn [[x1 y1]]
       (->> deltas
            (map (fn [[x2 y2]] [(+ x1 x2) (+ y1 y2)]))
-           (remove #(or (> (first %) (first goal)) (> (second %) (last goal)) (some neg-int? %)))
-           (map (juxt identity (partial get mapping)))))))
+           (remove (fn [[x y :as pos]] (or (> x (first goal)) (> y (last goal)) (some neg-int? pos))))
+           (map (juxt identity (partial get cost-by-position)))))))
 
 (defn solve [adjacents-fn]
   (let [cheapest #(first (sort-by val %))]
@@ -36,7 +35,7 @@
       (if (seq unsettled)
         (let [[position cost] (cheapest unsettled)
               adjacents (adjacents-fn position)
-              eligible (remove #(contains? visited (first %)) adjacents)]
+              eligible (remove (fn [[pos]] (contains? visited pos)) adjacents)]
           (recur (reduce (fn [acc [position' cost']]
                            (update acc position' (fnil min Integer/MAX_VALUE)
                                    (+ cost cost')))
@@ -50,7 +49,7 @@
         cave (create-cave content)]
     (get (solve (adjacents-fn cave)) goal)))
 
-(defn expand-cave [coll size]
+(defn real-cave [coll size]
   (let [new-size (* size 5)]
     (partition
      new-size
@@ -67,8 +66,9 @@
 (defn solve2 []
   (let [cave (create-cave content)
         size (count cave)
-        goal [(dec (* 5 size)) (dec (* 5 size))]
-        real-cave (expand-cave cave size)]
+        real-cave (real-cave cave size)
+        goal (goal real-cave)]
     (get (solve (adjacents-fn real-cave)) goal)))
 
-(comment (solve2))
+(solve1)
+(solve2)
