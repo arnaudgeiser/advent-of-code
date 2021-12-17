@@ -5,31 +5,32 @@
 (def content (puzzle 16))
 
 (defn hex->bytes [s]
-  (str/join
-   (map (fn [s]
-          (let [s (.toString (BigInteger. (str/join s) 16) 2)
-                missing-zeros (mod (count s) 8)]
-            (if (zero? missing-zeros)
-              s
-              (str (str/join (repeat (- 8 missing-zeros) "0")) s))))
-        (partition 2 s))))
+  (->> s
+       (partition 2)
+       (map (fn [s]
+              (let [s (.toString (BigInteger. (str/join s) 16) 2)
+                    missing-zeros (mod (count s) 8)]
+                (if (zero? missing-zeros)
+                  s
+                  (str (str/join (repeat (- 8 missing-zeros) "0")) s)))))
+       (str/join)))
 
-(defn val [s start end]
+(defn value [s start end]
   (Integer/parseInt (subs s start end) 2))
+
+(defn drop-bytes [n bytes]
+  (str/join (drop n bytes)))
 
 (defn literal [bytes]
   (loop [sum 0
          rem-bytes bytes]
     (let [is-last (= (first rem-bytes) \0)
-          new-sum (if (= 1 (count rem-bytes)) sum
-                      (+ (bit-shift-left sum 4) (val rem-bytes 1 (min (count rem-bytes) 5))))]
+          sum (if (= 1 (count rem-bytes)) sum
+                  (+ (bit-shift-left sum 4)
+                     (value rem-bytes 1 (min (count rem-bytes) 5))))]
       (if is-last
-        [0 (str/join (drop 5 rem-bytes))]
-        (recur new-sum (str/join (drop 5 rem-bytes)))))))
-
-
-(defn operator-length [bit]
-  (if (= bit \0) 15 11))
+        [sum (drop-bytes 5 rem-bytes)]
+        (recur sum (drop-bytes 5 rem-bytes))))))
 
 (declare compute)
 
@@ -37,55 +38,52 @@
 
 (defmethod operator \0 [bytes]
   (let [length 15
-        subpacket-length (val bytes 1 (inc length))
+        subpacket-length (value bytes 1 (inc length))
         subpacket (str/join (take subpacket-length (drop (inc length) bytes)))]
-    (loop [sum 0
+    (loop [packets []
            rem-bytes subpacket]
       (if (empty? rem-bytes)
-        [sum (str/join (drop (+ subpacket-length (inc length)) bytes))]
-        (let [version (val rem-bytes 0 3)
-              type (val rem-bytes 3 6)
-              [new-sum rem-bytes'] (compute type (str/join (drop 6 rem-bytes)))]
-          (recur (+ sum new-sum version) rem-bytes'))))))
+        [packets (str/join (drop (+ subpacket-length (inc length)) bytes))]
+        (let [[value rem-bytes'] (compute rem-bytes)]
+          (recur (conj packets value) rem-bytes'))))))
 
 (defmethod operator \1 [bytes]
-  (let [nb-subpackets (val bytes 1 12)]
-    (loop [sum 0
+  (let [nb-subpackets (value bytes 1 12)]
+    (loop [packets []
            nb-subpackets nb-subpackets
-           rem-bytes (str/join (drop-bytes bytes 12))]
+           rem-bytes (drop-bytes 12 bytes)]
       (if (zero? nb-subpackets)
-        [sum rem-bytes]
-        (let [version (val rem-bytes 0 3)
-              type (val rem-bytes 3 6)
-              [new-sum rem-bytes'] (compute type (str/join (drop 6 rem-bytes)))]
-          (recur (+ sum new-sum version)
+        [packets rem-bytes]
+        (let [[new-sum rem-bytes'] (compute rem-bytes)]
+          (recur (conj packets new-sum)
                  (dec nb-subpackets)
                  rem-bytes'))))))
 
-(def sample "D2FE28")
-(def sample2 "38006F45291200")
-(def sample3 "EE00D40C823060")
-(def sample4 "8A004A801A8002F478")
-(def sample5 "620080001611562C8802118E34")
-(def sample6 "C0015000016115A2E0802F182340")
-
-(defn drop-bytes [bytes n]
-  (str/join (drop n bytes)))
-
 (defn parse-header [bytes]
-  [(val bytes 0 3) (val bytes 3 6) (drop-bytes bytes 6)])
+  [(value bytes 0 3) ;; version
+   (value bytes 3 6) ;; type
+   (drop-bytes 6 bytes)])
 
-(defn compute [type bytes]
-  (cond
-    (= type 4) (literal bytes)
-    :else (operator bytes)))
+(defn type->fn [type]
+  (condp = type
+    0 (partial reduce +)
+    1 (partial reduce *)
+    2 (partial reduce min)
+    3 (partial reduce max)
+    5 #(if (apply > %) 1 0)
+    6 #(if (apply < %) 1 0)
+    7 #(if (apply = %) 1 0)))
 
-(loop [bytes (hex->bytes (first content))
-       sum 0]
-  (if (seq (remove (partial = \0) bytes))
-    (let [[version type rem-bytes] (parse-header bytes)
-          [sum-version rem-bytes] (compute type rem-bytes)]
-      (recur rem-bytes (+ sum sum-version version)))
-    sum))
+(defn compute [bytes]
+  (let [[_ type bytes] (parse-header bytes)]
+    (if (= 4 type)
+      (literal bytes)
+      (let [[value rem-bytes] (operator bytes)
+            f (type->fn type)]
+        [(f value) rem-bytes]))))
 
-(hex->bytes sample6)
+(->> content
+     first
+     hex->bytes
+     compute
+     first)
