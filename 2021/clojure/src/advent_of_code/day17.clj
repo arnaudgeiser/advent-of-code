@@ -1,9 +1,6 @@
-(ns advent-of-code.day17
-  (:require [advent-of-code.core :refer [puzzle]]
-            [clojure.string :as str]))
+(ns advent-of-code.day17)
 
 (def target [96 125 -144 -98])
-(def target [20 30 -10 -5])
 
 (defn hit-target [[velx vely :as velocity]]
   (let [[min-targetx max-targetx min-targety max-targety] target]
