@@ -6,58 +6,71 @@
 
 (defn land-left-location [coll path]
   (let [index (last path)
-        path' (pop path)]
+        path' path]
     (cond
-      (empty? (pop path))
+      (empty? path)
       nil
       (> index 0)
-      (loop [path' (conj path' 0)]
+      (loop [path' (conj (pop path') 0)]
         (if (coll? (get-in coll path'))
           (recur (conj path' 1))
           path'))
       :else
-      (recur coll path'))))
+      (recur coll (pop path')))))
 
 (defn land-right-location [coll path]
-  (let [index (last path)
-        path' (pop path)]
+  (let [path' path]
     (cond
       (empty? path)
       nil
-      (zero? index)
-      (loop [path' (conj path' 1)]
+      (zero? (last path'))
+      (loop [path' (conj (pop path') 1)]
         (if (coll? (get-in coll path'))
           (recur (conj path' 0))
           path'))
       :else
-      (recur coll path'))))
+      (recur coll (pop path')))))
+
+(def sample3 [[6,[5,[4,[3,2]]]],[2 3]])
+(land-right-location sample3 [0 1 1 1])
 
 (defn explode? [tuple path]
   (and (= (count path) 3) (coll? tuple)))
 
-(defn process2 [coll [left right :as tuple] path]
+(defn split? [nb]
+  (and (int? nb) (> nb 10)))
+
+(defn process2 [coll [left right] path]
   (cond
     (explode? left path)
-    (let [left-location (land-left-location coll path)
-          right-location (land-right-location coll path)
-          v (get-in coll right-location)]
-      (-> coll (update-in path (fn [[[_ v2] _]] [(+ v v2) 0]))
-          (update-in left-location + (second left))))
+    (let [left-location (land-left-location coll path)]
+      (cond-> (update-in coll path (fn [[[_ v2] v]] [0 (+ v v2)]))
+        left-location
+        (update-in left-location + (first left))))
 
     (explode? right path)
-    (let [left-location (land-left-location coll (conj path 1))
-          right-location (land-right-location coll (conj path 1))
-          v (get-in coll left-location)]
-      (-> coll (update-in path (fn [[_ [v2 _]]] [(+ v v2) 0]))
-          (update-in right-location + (second right))))
+    (let [right-location (land-right-location coll path)]
+      (cond-> (update-in coll path (fn [[v [v2 _]]] [(+ v v2) 0]))
+        right-location
+        (update-in right-location + (second right))))
+
+    (split? left)
+    (update-in coll (conj path 0) (fn [x] [(quot x 2) (+ (quot x 2) (mod x 2))]))
+
+    (split? right)
+    (update-in coll (conj path 1) (fn [x] [(quot x 2) (+ (quot x 2) (mod x 2))]))
 
     :else
-    (cond-> coll
-      (coll? left)
-      (process2 left (conj path 0))
+    (let [coll-left (if (coll? left) (process2 coll left (conj path 0)) coll)]
+      (cond
+        (not= coll-left coll)
+        coll-left
 
-      (coll? right)
-      (process2 right (conj path 1)))))
+        (coll? right)
+        (process2 coll right (conj path 1))
+
+        :else
+        coll))))
 
 
 (def sample [[[[[9,8],1],2],3],4])
@@ -76,18 +89,47 @@
 (process2 sample5 sample5 [])
 
 (get-in sample2 [1 1 1])
-'
 
-(defn process [coll]
-  (loop [i 0
-         path []
-         acc []]
-    (if (= i (count coll))
-      acc
-      (let [v (nth coll i)]
-        (if (seq coll)
-          (let [[mid-left mid-right] coll
-                left (if (zero? i) 0 (nth coll (dec i)))
-                right (nth coll (inc i))]
-            (recur (inc i) (conj acc [(+ mid-left left) right])))
-          (recur (inc i) (conj acc v)))))))
+(def t
+  [[[[[4,3],4],4],[7,[[8,4],9]]]
+   [1,1]])
+
+(def t2 (process2 t t []))
+
+t2
+
+(defn solve [coll]
+  (loop [prev nil
+         curr coll]
+    (if (= prev curr)
+      curr
+      (recur curr (process2 curr curr [])))))
+
+(def asd1 [[[[1,1],[2,2]],[3,3]],[4,4]])
+(def asd [[[[3,0],[5,3]],[4,4]],[5,5]])
+
+(solve (concat asd1 asd))
+
+
+(def input [[[[0,[4,5]],[0,0]],[[[4,5],[2,6]],[9,5]]]
+            [7,[[[3,7],[4,3]],[[6,3],[8,8]]]]
+            [[2,[[0,8],[3,4]]],[[[6,7],1],[7,[1,6]]]]
+            [[[[2,4],7],[6,[0,5]]],[[[6,8],[2,8]],[[2,1],[4,5]]]]
+            [7,[5,[[3,8],[1,4]]]]
+            [[2,[2,2]],[8,[8,1]]]
+            [2,9]
+            [1,[[[9,3],9],[[9,0],[0,7]]]]
+            [[[5,[7,4]],7],1]
+            [[[[4,2],2],6],[8,7]]])
+
+(def input
+  [[1,1]
+   [2,2]
+   [3,3]
+   [4,4]
+   [5,5]]
+  )
+
+(reduce #(solve (vector %1 %2)) (solve (first input)) (into [] (rest input)))
+
+(solve (vector (solve (first input)) (second input)))
