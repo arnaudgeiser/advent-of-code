@@ -1,8 +1,8 @@
 (ns advent-of-code.day18
   (:require [advent-of-code.core :refer [puzzle]]))
 
-(puzzle 18)
-
+(def content (->> (puzzle 18)
+                  (map read-string)))
 
 (defn land-left-location [coll path]
   (let [index (last path)
@@ -44,13 +44,18 @@
   (cond
     (explode? left path)
     (let [left-location (land-left-location coll path)]
-      (cond-> (update-in coll path (fn [[[_ v2] v]] [0 (+ v v2)]))
+      (cond-> (update-in coll path (fn [[[_ v2] v]]
+                                     (if (coll? v)
+                                       [0 [(+ v2 (first v)) (second v)]]
+                                       [0 (+ v v2)])))
         left-location
         (update-in left-location + (first left))))
 
     (explode? right path)
     (let [right-location (land-right-location coll path)]
-      (cond-> (update-in coll path (fn [[v [v2 _]]] [(+ v v2) 0]))
+      (cond-> (update-in coll path (fn [[v [v2 _]]] (if (coll? v)
+                                                      [[(first v) (+ v2 (second v))] 0]
+                                                      [(+ v v2) 0])))
         right-location
         (update-in right-location + (second right))))
 
@@ -88,11 +93,10 @@
 (def sample5 [[3,[2,[8,0]]],[9,[5,[4,[3,2]]]]])
 (process2 sample5 sample5 [])
 
-(get-in sample2 [1 1 1])
 
 (def t
-  [[[[[4,3],4],4],[7,[[8,4],9]]]
-   [1,1]])
+  [[[[[1,1],[2,2]],[3,3]],[4,4]][5 5]]
+  )
 
 (def t2 (process2 t t []))
 
@@ -123,13 +127,32 @@ t2
             [[[[4,2],2],6],[8,7]]])
 
 (def input
-  [[1,1]
-   [2,2]
-   [3,3]
-   [4,4]
-   [5,5]]
+  [
+   [[[0,[4,5]],[0,0]],[[[4,5],[2,6]],[9,5]]]
+   [7,[[[3,7],[4,3]],[[6,3],[8,8]]]]
+   [[2,[[0,8],[3,4]]],[[[6,7],1],[7,[1,6]]]]
+   [[[[2,4],7],[6,[0,5]]],[[[6,8],[2,8]],[[2,1],[4,5]]]]
+   [7,[5,[[3,8],[1,4]]]]
+   [[2,[2,2]],[8,[8,1]]]
+   [2,9]
+   [1,[[[9,3],9],[[9,0],[0,7]]]]
+   [[[5,[7,4]],7],1]
+   [[[[4,2],2],6],[8,7]]
+   ]
   )
 
-(reduce #(solve (vector %1 %2)) (solve (first input)) (into [] (rest input)))
+(def input
+  [[1 1]
+   [2 2]
+   [3 3]
+   [4 4]
+   [5 5]
+   [6 6]])
 
-(solve (vector (solve (first input)) (second input)))
+(reduce #(solve (vector %1 %2)) (solve (first input)) (take 1 (rest input)))
+
+(solve (vector (solve (first content)) (rest content)))
+
+(def a [[[[[1 1][2 2]] 3] 4] 5])
+
+(process2 a a [])
