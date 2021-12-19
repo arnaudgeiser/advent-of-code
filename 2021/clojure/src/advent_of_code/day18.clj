@@ -1,8 +1,9 @@
 (ns advent-of-code.day18
-  (:require [advent-of-code.core :refer [puzzle]]))
+  (:require [advent-of-code.core :refer [puzzle]]
+            [clojure.math.combinatorics :as combo]))
 
 (def content (->> (puzzle 18)
-                  (map read-string)))
+                  (mapv read-string)))
 
 (defn land-left-location [coll path]
   (let [index (last path)
@@ -31,128 +32,82 @@
       :else
       (recur coll (pop path')))))
 
-(def sample3 [[6,[5,[4,[3,2]]]],[2 3]])
-(land-right-location sample3 [0 1 1 1])
-
 (defn explode? [tuple path]
-  (and (= (count path) 3) (coll? tuple)))
+  (and (>= (count path) 4) (coll? tuple)))
 
 (defn split? [nb]
-  (and (int? nb) (> nb 10)))
+  (and (int? nb) (>= nb 10)))
 
-(defn process2 [coll [left right] path]
+(defn try-explode [coll pair path]
   (cond
-    (explode? left path)
-    (let [left-location (land-left-location coll path)]
-      (cond-> (update-in coll path (fn [[[_ v2] v]]
-                                     (if (coll? v)
-                                       [0 [(+ v2 (first v)) (second v)]]
-                                       [0 (+ v v2)])))
-        left-location
-        (update-in left-location + (first left))))
-
-    (explode? right path)
-    (let [right-location (land-right-location coll path)]
-      (cond-> (update-in coll path (fn [[v [v2 _]]] (if (coll? v)
-                                                      [[(first v) (+ v2 (second v))] 0]
-                                                      [(+ v v2) 0])))
+    (explode? pair path)
+    (let [[left right] pair
+          left-location (land-left-location coll path)
+          right-location (land-right-location coll path)]
+      (cond-> (update-in coll path (constantly 0))
         right-location
-        (update-in right-location + (second right))))
+        (update-in right-location + right)
+        left-location
+        (update-in left-location + left)))
 
-    (split? left)
-    (update-in coll (conj path 0) (fn [x] [(quot x 2) (+ (quot x 2) (mod x 2))]))
-
-    (split? right)
-    (update-in coll (conj path 1) (fn [x] [(quot x 2) (+ (quot x 2) (mod x 2))]))
+    (not (coll? pair))
+    coll
 
     :else
-    (let [coll-left (if (coll? left) (process2 coll left (conj path 0)) coll)]
+    (let [coll-left (try-explode coll (first pair) (conj path 0))
+          coll-right (try-explode coll (second pair) (conj path 1))]
       (cond
         (not= coll-left coll)
         coll-left
 
-        (coll? right)
-        (process2 coll right (conj path 1))
+        (not= coll-right coll)
+        coll-right
 
-        :else
-        coll))))
+        :else coll))))
 
+(defn try-split [coll pair path]
+  (cond
+    (split? pair)
+    (update-in coll path (fn [x] [(quot x 2) (+ (quot x 2) (mod x 2))]))
 
-(def sample [[[[[9,8],1],2],3],4])
-(def sample2 [7,[6,[5,[4,[3,2]]]]])
+    (not (coll? pair))
+    coll
 
-(process2 sample sample [])
-(process2 sample2 sample2 [])
-
-(def sample3 [[6,[5,[4,[3,2]]]],1])
-(process2 sample3 sample3 [])
-
-(def sample4 [[3,[2,[1,[7,3]]]],[6,[5,[4,[3,2]]]]])
-(process2 sample4 sample4 [])
-
-(def sample5 [[3,[2,[8,0]]],[9,[5,[4,[3,2]]]]])
-(process2 sample5 sample5 [])
-
-
-(def t
-  [[[[[1,1],[2,2]],[3,3]],[4,4]][5 5]]
-  )
-
-(def t2 (process2 t t []))
-
-t2
+    :else
+    (let [split-left (try-split coll (first pair) (conj path 0))]
+      (if (= split-left coll)
+        (try-split coll (second pair) (conj path 1))
+        split-left))))
 
 (defn solve [coll]
   (loop [prev nil
          curr coll]
     (if (= prev curr)
       curr
-      (recur curr (process2 curr curr [])))))
+      (let [exploded (try-explode curr curr [])]
+        (recur curr (if (= exploded curr)
+                      (try-split curr curr [])
+                      exploded))))))
 
-(def asd1 [[[[1,1],[2,2]],[3,3]],[4,4]])
-(def asd [[[[3,0],[5,3]],[4,4]],[5,5]])
+(defn magnitude [v]
+  (if (int? v)
+    v
+    (+ (* 3 (magnitude (first v)))
+       (* 2 (magnitude (second v))))))
 
-(solve (concat asd1 asd))
+(defn solve1 []
+  (magnitude
+   (reduce #(solve (vector %1 %2))
+           (solve (first content))
+           (rest content))))
 
+(defn solve2 []
+  (->> (combo/permuted-combinations content 2)
+       (map (partial into []))
+       (map solve)
+       (map magnitude)
+       (sort >)
+       (first)))
 
-(def input [[[[0,[4,5]],[0,0]],[[[4,5],[2,6]],[9,5]]]
-            [7,[[[3,7],[4,3]],[[6,3],[8,8]]]]
-            [[2,[[0,8],[3,4]]],[[[6,7],1],[7,[1,6]]]]
-            [[[[2,4],7],[6,[0,5]]],[[[6,8],[2,8]],[[2,1],[4,5]]]]
-            [7,[5,[[3,8],[1,4]]]]
-            [[2,[2,2]],[8,[8,1]]]
-            [2,9]
-            [1,[[[9,3],9],[[9,0],[0,7]]]]
-            [[[5,[7,4]],7],1]
-            [[[[4,2],2],6],[8,7]]])
-
-(def input
-  [
-   [[[0,[4,5]],[0,0]],[[[4,5],[2,6]],[9,5]]]
-   [7,[[[3,7],[4,3]],[[6,3],[8,8]]]]
-   [[2,[[0,8],[3,4]]],[[[6,7],1],[7,[1,6]]]]
-   [[[[2,4],7],[6,[0,5]]],[[[6,8],[2,8]],[[2,1],[4,5]]]]
-   [7,[5,[[3,8],[1,4]]]]
-   [[2,[2,2]],[8,[8,1]]]
-   [2,9]
-   [1,[[[9,3],9],[[9,0],[0,7]]]]
-   [[[5,[7,4]],7],1]
-   [[[[4,2],2],6],[8,7]]
-   ]
-  )
-
-(def input
-  [[1 1]
-   [2 2]
-   [3 3]
-   [4 4]
-   [5 5]
-   [6 6]])
-
-(reduce #(solve (vector %1 %2)) (solve (first input)) (take 1 (rest input)))
-
-(solve (vector (solve (first content)) (rest content)))
-
-(def a [[[[[1 1][2 2]] 3] 4] 5])
-
-(process2 a a [])
+(solve1)
+(solve2)
