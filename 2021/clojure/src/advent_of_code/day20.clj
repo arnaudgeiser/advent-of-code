@@ -5,20 +5,34 @@
 
 (def content (puzzle 20))
 
-(def mapping (->> content
-                  (take 2)
+#_
+(def content ["..#.#..#####.#.#.#.###.##.....###.##.#..###.####..#####..#....#..#..##..##"
+              "#..######.###...####..#..#####..##..#.#####...##.#.#..#.##..#.#......#.###"
+              ".######.###.####...#.##.##..#..#..#####.....#.#....###..#.##......#.....#."
+              ".#..#..##..#...##.######.####.####.#.#...#.......#..#.#.#...####.##.#....."
+              ".#..#...##.#.##..#...##.#.##..###.#......#.#.......#.#.#.####.###.##...#.."
+              "...####.#..#..#.##.#....##..#.####....##...##..#...#......#.#.......#....."
+              "..##..####..#...#.#.#...##..#.#..###..#####........#..####......#..#"
+              ""
+              "#..#."
+              "#...."
+              "##..#"
+              "..#.."
+              "..###"])
+
+(def mapping (->> (take 1 content)
                   (str/join)
-                  (map-indexed (fn [i v] [i v]))
+                  (map-indexed (fn [i v] [i (char v)]))
                   (into {})))
 
 (defn full-map [content]
   (->> content
-       (drop 3)
-       (mapv #(str/split % #""))
+       (drop 2)
+       (mapv (fn [line] (map #(.charAt % 0) (str/split line #""))))
        (into [])))
 
 (defn group [[x y]]
-  [[(dec x) (dec y)] [x (dec y)] [(inc x) (inc y)]
+  [[(dec x) (dec y)] [x (dec y)] [(inc x) (dec y)]
    [(dec x) y] [x y] [(inc x) y]
    [(dec x) (inc y)] [x (inc y)] [(inc x) (inc y)]])
 
@@ -38,13 +52,15 @@
      :expand 0
      :points (points full-map)}))
 
-(defn symbol->binary [s]
-  (if (= s "#") 1 0))
+(defn symbol->binary [default s]
+  (cond (= s \#) 1
+        (= s \.) 0
+        :else default))
 
-(defn group->int [group points]
+(defn group->int [group points default]
   (->> group
        (map #(get points %))
-       (map symbol->binary)
+       (map (partial symbol->binary default))
        (str/join)
        (#(BigInteger. % 2))))
 
@@ -56,22 +72,18 @@
    (into {} (for [x (range (dec (- expand)) (inc (+ xsize expand)))
                   y (range (dec (- expand)) (inc (+ ysize expand)))]
               (let [group (group [x y])
-                    int-value (group->int group points)
+                    int-value (group->int group points (if (zero? (mod expand 2)) 0 1))
                     new-val (get mapping int-value)]
                 [[x y] new-val])))})
 
-(range -5 5)
+(defn solve [content nb]
+  (->> (iterate enhance (build-map content))
+       (take (inc nb))
+       (last)
+       (:points)
+       vals
+       (filter (partial = \#))
+       (count)))
 
-(first (enhance (build-map content)))
-
-(->> (iterate enhance (build-map content))
-     (take 2)
-     (last)
-     :expand
-     #_#_#_
-     vals
-     (filter (partial = \#))
-     (count))
-
-#_
-(count (first full-map))
+(solve content 2)
+(solve content 50)
