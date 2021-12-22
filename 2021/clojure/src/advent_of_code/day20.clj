@@ -5,56 +5,73 @@
 
 (def content (puzzle 20))
 
-(def mapping
-  (->> content
-       (take 2)
-       (str/join)
-       (map-indexed (fn [i v] [i v]) )
-       (into {})))
+(def mapping (->> content
+                  (take 2)
+                  (str/join)
+                  (map-indexed (fn [i v] [i v]))
+                  (into {})))
 
-(def full-map
+(defn full-map [content]
   (->> content
        (drop 3)
        (mapv #(str/split % #""))
        (into [])))
 
-(defn group-fn [full-map]
-  (let [max-x (count full-map)
-        max-y (count (first full-map))
-        valid? (fn [[x y]] (and (nat-int? x) (nat-int? y) (< x max-x) (< y max-y)))]
-    (fn [[x y]]
-      (filterv valid? [[(dec x) (dec y)] [x (dec y)] [(inc x) (inc y)]
-                       [(dec x) y] [x y] [(inc x) y]
-                       [(dec x) (inc y)] [x (inc y)] [(inc x) (inc y)]]))))
-(def points
-  (into []
-        (mapcat identity (map-indexed (fn [y row] (into [] (map-indexed (fn [x _] [x y]) row))) full-map))))
+(defn group [[x y]]
+  [[(dec x) (dec y)] [x (dec y)] [(inc x) (inc y)]
+   [(dec x) y] [x y] [(inc x) y]
+   [(dec x) (inc y)] [x (inc y)] [(inc x) (inc y)]])
+
+(defn points [full-map]
+  (into {}
+        (mapcat identity
+                (map-indexed (fn [y row]
+                               (map-indexed (fn [x v] [[x y] v]) row))
+                             full-map))))
+
+(defn build-map [content]
+  (let [full-map (full-map content)
+        xsize (count (first full-map))
+        ysize (count full-map)]
+    {:xsize xsize
+     :ysize ysize
+     :expand 0
+     :points (points full-map)}))
 
 (defn symbol->binary [s]
   (if (= s "#") 1 0))
 
-(defn group->int [full-map group]
+(defn group->int [group points]
   (->> group
-       (map (partial get-in full-map))
+       (map #(get points %))
        (map symbol->binary)
        (str/join)
        (#(BigInteger. % 2))))
 
-(group->int full-map [[0 1] [1 0]])
+(defn enhance [{:keys [xsize ysize expand points]}]
+  {:xsize xsize
+   :ysize ysize
+   :expand (inc expand)
+   :points
+   (into {} (for [x (range (dec (- expand)) (inc (+ xsize expand)))
+                  y (range (dec (- expand)) (inc (+ ysize expand)))]
+              (let [group (group [x y])
+                    int-value (group->int group points)
+                    new-val (get mapping int-value)]
+                [[x y] new-val])))})
 
-(defn enhance [full-map]
-  (partition 100
-             (let [get-group (group-fn full-map)]
-               (for [point points]
-                 (let [group (get-group point)
-                       int-value (group->int full-map group)
-                       new-val (get mapping int-value)]
-                   new-val)))))
+(range -5 5)
 
-(->> (iterate enhance full-map)
+(first (enhance (build-map content)))
+
+(->> (iterate enhance (build-map content))
      (take 2)
-     (flatten)
+     (last)
+     :expand
+     #_#_#_
+     vals
      (filter (partial = \#))
      (count))
 
+#_
 (count (first full-map))
