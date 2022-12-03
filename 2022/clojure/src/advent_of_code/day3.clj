@@ -5,9 +5,8 @@
 (def content (puzzle 3))
 
 (defn char->int [c]
-  (if (Character/isLowerCase c)
-    (- (int c) 96)
-    (- (int c) 38)))
+  (- (int c)
+     (if (Character/isLowerCase c) 96 38)))
 
 (def solution1
   (->> content
