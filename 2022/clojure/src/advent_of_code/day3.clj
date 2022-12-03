@@ -11,15 +11,15 @@
 
 (def solution1
   (->> content
-       (map #(mapv set (split-at (/ (count %) 2) %)))
+       (map #(map set (split-at (/ (count %) 2) %)))
        (mapcat (partial apply set/intersection))
        (map char->int)
        (reduce +)))
 
 (def solution2
   (->> content
-        (map #(set (map char %)))
-        (partition-all 3)
-        (mapcat (partial apply set/intersection))
-        (map char->int)
-        (reduce +)))
+       (map #(set (map char %)))
+       (partition-all 3)
+       (mapcat (partial apply set/intersection))
+       (map char->int)
+       (reduce +)))
