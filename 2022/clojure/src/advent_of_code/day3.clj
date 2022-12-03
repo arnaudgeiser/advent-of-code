@@ -18,7 +18,7 @@
 
 (def solution2
   (->> content
-       (map #(set (map char %)))
+       (map set)
        (partition-all 3)
        (mapcat (partial apply set/intersection))
        (map char->int)
