@@ -10,7 +10,7 @@
 
 (def solution1
   (->> content
-       (map #(map set (split-at (/ (count %) 2) %)))
+       (map #(map set (split-at (/ (count %) 2) (set %))))
        (mapcat (partial apply set/intersection))
        (map char->int)
        (reduce +)))
