@@ -11,7 +11,7 @@
        (mapcat #(str/split % #"-"))
        (map parse-long)
        (partition-all 2)
-       (map (fn [[i1 i2]] (range i1 (inc i2))))
+       (map (fn [[x y]] (range x (inc y))))
        (map set)
        (partition-all 2)
        (filter pred)
