@@ -36,7 +36,4 @@
        (str/join)))
 
 (def solution1 (solve (drop 10 content) stacks reverse))
-
-solution1
-
 (def solution2 (solve (drop 10 content) stacks identity))
