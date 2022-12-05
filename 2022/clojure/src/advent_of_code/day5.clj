@@ -7,12 +7,9 @@
 (def stacks
   (->> (take 8 content)
        (map (partial partition-all 4))
-       (mapcat (fn [line] (map #(nth % 1) line)))
-       (map #(when-not (= \space %) %))
-       (partition-all 9)
+       (map (partial map second))
        (apply map vector)
-       (mapv (comp reverse (partial filterv identity)))
-       (into [])))
+       (mapv (comp reverse (partial remove (partial = \space))))))
 
 (defn parse-line [s]
   (->> (re-find #"move ([0-9]*) from ([0-9]*) to ([0-9]*)" s)
@@ -24,11 +21,12 @@
         to'                   (dec to)
         from-stack            (nth stack from')
         to-stack              (nth stack to')
-        [from-stack' to-move] (split-at (- (count from-stack) nb) from-stack)
-        to-stack'             (into [] (concat to-stack (append-fn to-move)))]
+        cnt-from              (count from-stack)
+        [from-stack' to-move] (split-at (- cnt-from nb) from-stack)
+        to-stack'             (concat to-stack (append-fn to-move))]
     (-> stack
-        (assoc from' (into [] from-stack'))
-        (assoc to' (into [] to-stack')))))
+        (assoc from' from-stack')
+        (assoc to' to-stack'))))
 
 (defn solve [commands init append-fn]
   (->> commands
@@ -38,5 +36,7 @@
        (str/join)))
 
 (def solution1 (solve (drop 10 content) stacks reverse))
+
+solution1
 
 (def solution2 (solve (drop 10 content) stacks identity))
