@@ -4,19 +4,20 @@
 
 (def content (puzzle 5))
 
-(def stack
+(def stacks
   (->> (take 8 content)
-       (map #(partition-all 4 %))
+       (map (partial partition-all 4))
        (mapcat (fn [line] (map #(nth % 1) line)))
-       (map #(if (= \space %) nil %))
+       (map #(when-not (= \space %) %))
        (partition-all 9)
        (apply map vector)
        (mapv (comp reverse (partial filterv identity)))
        (into [])))
 
 (defn parse-line [s]
-  (let [[_ & tail] (re-find #"move ([0-9]*) from ([0-9]*) to ([0-9]*)" s)]
-    (mapv parse-long tail)))
+  (->> (re-find #"move ([0-9]*) from ([0-9]*) to ([0-9]*)" s)
+       (rest)
+       (mapv parse-long)))
 
 (defn process-command [append-fn stack [nb from to]]
   (let [from'                 (dec from)
@@ -36,6 +37,6 @@
        (map last)
        (str/join)))
 
-(def solution1 (solve (drop 10 content) stack reverse))
+(def solution1 (solve (drop 10 content) stacks reverse))
 
-(def solution2 (solve (drop 10 content) stack identity))
+(def solution2 (solve (drop 10 content) stacks identity))
