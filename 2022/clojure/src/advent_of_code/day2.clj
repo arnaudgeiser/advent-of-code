@@ -14,12 +14,6 @@
               ["C" "X"] 7
               ["C" "Y"] 2})
 
-(def solution1
-  (->> content
-       (map #(str/split % #" "))
-       (map mapping)
-       (reduce +)))
-
 (def mapping2 {["A" "X"] 3
                ["B" "Y"] 5
                ["C" "Z"] 7
@@ -30,8 +24,11 @@
                ["C" "X"] 2
                ["C" "Y"] 6})
 
-(def solution2
+(defn solve [mapping]
   (->> content
        (map #(str/split % #" "))
-       (map mapping2)
+       (map mapping)
        (reduce +)))
+
+(def solution1 (solve mapping))
+(def solution2 (solve mapping2))
