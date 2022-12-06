@@ -4,10 +4,10 @@
 (def content (first (puzzle 6)))
 
 (defn solve [nb]
- (->> content
-     (partition-all nb 1)
-     (map (comp count set))
-     (reduce (fn [acc cnt] (if (= cnt nb) (reduced acc) (inc acc))) nb)))
+  (->> content
+        (partition-all nb 1)
+        (map (comp count set))
+        (reduce (fn [acc cnt] (if (= cnt nb) (reduced acc) (inc acc))) nb)))
 
 (def solution1 (solve 4))
 (def solution2 (solve 14))
