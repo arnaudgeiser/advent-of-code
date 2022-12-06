@@ -1,7 +1,7 @@
 (ns advent-of-code.day6
-  (:require [advent-of-code.core :refer [puzzle]]))
+  (:require [advent-of-code.core :refer [raw-puzzle]]))
 
-(def content (first (puzzle 6)))
+(def content (raw-puzzle 6))
 
 (defn solve [nb]
   (->> content
