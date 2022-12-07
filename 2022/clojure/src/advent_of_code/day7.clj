@@ -15,9 +15,7 @@
 (defn dirs [dir] (rest (reductions conj [] dir)))
 
 (defn update-hierarchy [hierarchy wd size]
-  (reduce (fn [hierarchy dir] (update hierarchy dir (fnil + 0) size))
-          hierarchy
-          (dirs wd)))
+  (reduce (fn [hierarchy dir] (update hierarchy dir (fnil + 0) size)) hierarchy (dirs wd)))
 
 (def hierarchy
   (->> (reduce (fn [{:keys [hierarchy wd] :as acc} line]
@@ -30,14 +28,14 @@
                content)
        :hierarchy))
 
-(defn solve [pred]
+(def solution1
   (->> (vals hierarchy)
-       (filter pred)))
-
-(def solution1 (reduce + (solve (partial > 100000))))
+       (filter (partial > 100000))
+       (reduce +)))
 
 (def solution2
   (let [used-space (get hierarchy ["/"])]
-    (->> (solve (partial < (- 30000000 (- 70000000 used-space))))
+    (->> (vals hierarchy)
+         (filter (partial < (- 30000000 (- 70000000 used-space))))
          (sort)
          (first))))
