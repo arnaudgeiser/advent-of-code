@@ -1,19 +1,16 @@
 (ns advent-of-code.day8
   (:require [advent-of-code.core :refer [puzzle]]))
 
-(def content (->> (puzzle 8)
-                  (mapv (partial mapv (comp parse-long str)))))
-
+(def content (->> (puzzle 8) (mapv (partial mapv (comp parse-long str)))))
 (def size (count content))
-
-(def coords (->> (concat
-                  (mapv #(vector 0 %) (range size))
-                  (mapv #(vector % 0) (range size))
-                  (mapv #(vector % (dec size)) (range size))
-                  (mapv #(vector (dec size) %) (range size)))))
-
 (defn row [x range] (mapv #(vector x %) range))
 (defn column [y range] (mapv #(vector % y) range))
+(def border-coords (mapcat (fn [i] [[0 i] [i 0] [i (dec size)] [(dec size) i]]) (range size)))
+
+(def coords
+  (for [x (range size)
+        y (range size)]
+    [x y]))
 
 (defn taller-trees [coord trees]
   (let [height (get-in content coord)]
@@ -31,17 +28,16 @@
 
 (defn smaller-trees [coord trees]
   (let [high (get-in content coord)]
-    (count
-     (loop [acc #{}
-            rem trees]
-       (if (seq rem)
-         (let [neigh (first rem)
-               neigh-height (get-in content neigh)]
-           (if (> high neigh-height)
-             (recur (conj acc neigh)
-                    (rest rem))
-             (conj acc neigh)))
-         acc)))))
+    (loop [acc #{}
+           rem trees]
+      (if (seq rem)
+        (let [neigh (first rem)
+              neigh-height (get-in content neigh)]
+          (if (> high neigh-height)
+            (recur (conj acc neigh)
+                   (rest rem))
+            (conj acc neigh)))
+        acc))))
 
 (defn trees-lines [lookup-fn [x y :as coord]]
   (let [left   (reverse (row x (range 0 y)))
@@ -53,24 +49,19 @@
 (defn observe [acc coord]
   (->> (trees-lines taller-trees coord)
        (reduce concat)
-       (reduce (fn [acc coord] (assoc acc coord true)) acc)))
-
-(def solution1
-  (->> (reduce observe {} coords)
-       (sort)
-       (count)))
+       (reduce conj acc)))
 
 (defn tree-house-location [acc coord]
   (->> (trees-lines smaller-trees coord)
+       (map count)
        (reduce *)
        (assoc acc coord)))
 
-(def coords2
-  (for [x (range size)
-        y (range size)]
-    [x y]))
+(def solution1
+  (->> (reduce observe #{} border-coords)
+       (count)))
 
 (def solution2
-  (->> (reduce tree-house-location {} coords2)
+  (->> (reduce tree-house-location {} coords)
        (vals)
        (reduce max)))
