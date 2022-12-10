@@ -18,7 +18,7 @@
 
 (def solution1
   (let [result (compute)]
-    (->> (mapv #(* % (get result (dec %))) [20 60 100 140 180 220])
+    (->> (map (fn [cycle] (* cycle (nth result (dec cycle)))) [20 60 100 140 180 220])
          (reduce +))))
 
 (def solution2
@@ -29,5 +29,5 @@
                   (conj acc ".")))
               [])
       (partition-all 40)
-      (mapv (partial str/join ""))
+      (map (partial str/join ""))
       (run! prn)))
