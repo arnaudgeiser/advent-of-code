@@ -22,9 +22,9 @@
          (reduce +))))
 
 (def solution2
- (->> (map-indexed (fn [i value] [(inc i) value]) (compute))
+ (->> (map-indexed (fn [i value] [i value]) (compute))
       (reduce (fn [acc [cycle value]]
-                (if (<= (dec value) (dec (mod cycle 40)) (inc value))
+                (if (<= (dec value) (mod cycle 40) (inc value))
                   (conj acc "#")
                   (conj acc ".")))
               [])
