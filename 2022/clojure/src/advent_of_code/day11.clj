@@ -8,9 +8,9 @@
   (-> (str/split line #"by ") second parse-long))
 
 (def gcd (->> content
-          (filter #(re-find #"by " %))
-          (mapv ->divisor)
-          (reduce *)))
+              (filter (partial re-find #"by "))
+              (map ->divisor)
+              (reduce *)))
 
 (defn op->fn [operation]
   (let [[f arg] (str/split operation #" ")
@@ -29,13 +29,12 @@
 (defn round [acc worry-fn]
   (reduce
    (fn [acc id]
-     (let [monkey (nth acc id)
-           items  (:items monkey)
-           throws (turn monkey worry-fn)
-           monkey'(-> monkey
-                     (assoc :items [])
-                     (update :inspections + (count items)))]
-       (-> (reduce (fn [acc [id vec]] (-> (update-in acc [id :items] concat vec))) acc throws)
+     (let [monkey  (nth acc id)
+           items   (:items monkey)
+           throws  (turn monkey worry-fn)
+           monkey' (-> monkey (assoc :items [])
+                       (update :inspections + (count items)))]
+       (-> (reduce (fn [acc [id vec]] (update-in acc [id :items] concat vec)) acc throws)
            (assoc id monkey'))))
    acc
    (range (count acc))))
