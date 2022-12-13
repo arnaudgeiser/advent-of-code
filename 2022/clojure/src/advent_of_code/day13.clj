@@ -1,33 +1,36 @@
 (ns advent-of-code.day13
-  (:require [advent-of-code.core :refer [puzzle]]
-            [clojure.string :as str]))
+  (:require [advent-of-code.core :refer [puzzle]]))
 
-(def content (->> (puzzle 13)))
+(def content (->> (puzzle 13) (filter seq) (map read-string)))
 
-#_
-(def content (str/split-lines (slurp "/home/arnaudgeiser/temp/input")))
-
-(def couples (->> content
-                  (filter seq)
-                  (map read-string)
-                  (partition 2)))
-
-(defn compare-couple [[c1 c2]]
+(defn compare-pair [pair1 pair2]
   (cond
-    (and (int? c1) (int? c2))
-    (cond (< c1 c2) :ok
-          (= c1 c2) :same
-          (> c1 c2) :ko)
-    (and (coll? c1) (int? c2)) (compare-couple [c1 [c2]])
-    (and (int? c1) (coll? c2)) (compare-couple [[c1] c2])
-    :else (let [res (->> (map vector c1 c2) (map compare-couple) (filter (partial not= :same)) (first))]
+    (and (int? pair1) (int? pair2))
+    (cond (< pair1 pair2) 1
+          (> pair1 pair2) -1
+          :else 0)
+    (and (coll? pair1) (int? pair2)) (compare-pair pair1 [pair2])
+    (and (int? pair1) (coll? pair2)) (compare-pair [pair1] pair2)
+    :else (let [res (->> (map vector pair1 pair2) (map (partial apply compare-pair)) (filter (complement zero?)) (first))]
             (if (some? res)
               res
               (cond
-                (> (count c1) (count c2)) :ko
-                (< (count c1) (count c2)) :ok
-                :else :same)))))
+                (> (count pair1) (count pair2)) -1
+                (< (count pair1) (count pair2)) 1
+                :else 0)))))
 
-(->> (mapv compare-couple couples)
-     (keep-indexed (fn [i x] (when (= x :ok) (inc i))))
-     (reduce +))
+(def dividers #{[[2]][[6]]})
+
+(def solution1
+  (->> (partition 2 content)
+       (mapv (partial apply compare-pair))
+       (keep-indexed (fn [i x] (when (pos-int? x) (inc i))))
+       (reduce +)))
+
+(def solution2
+  (->> content
+       (concat dividers)
+       (sort compare-pair)
+       (reverse)
+       (keep-indexed (fn [i x] (when (dividers x) (inc i))))
+       (reduce *)))
