@@ -5,19 +5,11 @@
 
 (defn compare-pair [pair1 pair2]
   (cond
-    (and (int? pair1) (int? pair2))
-    (cond (< pair1 pair2) 1
-          (> pair1 pair2) -1
-          :else 0)
+    (and (int? pair1) (int? pair2)) (- pair2 pair1)
     (and (coll? pair1) (int? pair2)) (compare-pair pair1 [pair2])
     (and (int? pair1) (coll? pair2)) (compare-pair [pair1] pair2)
     :else (let [res (->> (map vector pair1 pair2) (map (partial apply compare-pair)) (filter (complement zero?)) (first))]
-            (if (some? res)
-              res
-              (cond
-                (> (count pair1) (count pair2)) -1
-                (< (count pair1) (count pair2)) 1
-                :else 0)))))
+            (if (some? res) res (- (count pair2) (count pair1))))))
 
 (def dividers #{[[2]][[6]]})
 
