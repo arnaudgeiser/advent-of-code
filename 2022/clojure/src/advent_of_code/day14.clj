@@ -8,7 +8,7 @@
                       (map #(mapv (fn [e] (mapv parse-long (str/split e #","))) (str/split % #" -> ")))
                       (mapcat (partial partition 2 1))))
 
-(def max-rows    (->> (mapcat identity rocks-lines) (map second) (apply max)))
+(def max-rows (->> (mapcat identity rocks-lines) (map second) (apply max)))
 
 (def initial (->> (for [r (range (inc (+ 2 max-rows)))
                         c (range (inc 10000))]
