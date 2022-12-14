@@ -2,35 +2,30 @@
   (:require [advent-of-code.core :refer [puzzle]]
             [clojure.string :as str]))
 
-(def content (->> (puzzle 14)))
-#_
-(def content (str/split-lines (slurp "/home/arnaudgeiser/temp/input")))
+(def content (puzzle 14))
 
-(def input (->> content
-                (map #(mapv (fn [e] (mapv parse-long (str/split e #","))) (str/split % #" -> ")))
-                (mapcat (partial partition 2 1))))
+(def rocks-lines (->> content
+                      (map #(mapv (fn [e] (mapv parse-long (str/split e #","))) (str/split % #" -> ")))
+                      (mapcat (partial partition 2 1))))
 
-(def max-rows    (->> (mapcat identity input) (map second) (apply max)))
-(def max-columns (->> (mapcat identity input) (map first) (apply max)))
+(def max-rows    (->> (mapcat identity rocks-lines) (map second) (apply max)))
 
-(def initial (->> (for [r (range (inc max-rows))
-                        c (range (inc max-columns))]
+(def initial (->> (for [r (range (inc (+ 2 max-rows)))
+                        c (range (inc 10000))]
                     [[c r] \.])
                   (into {})))
-
 
 (def rocks
   (mapcat (fn [[[c1 r1] [c2 r2]]]
             (if (= c1 c2)
               (mapv #(vector c1 %) (range (min r1 r2) (inc (max r1 r2))))
               (mapv #(vector % r1) (range (min c1 c2) (inc (max c1 c2))))))
-        input))
+        rocks-lines))
 
-(def state (reduce #(assoc %1 %2 \#) initial rocks))
+(def floor (mapv #(vector % (+ 2 max-rows)) (range 10000)))
 
-(defn draw [m]
-  (doseq [r (range (inc max-rows))]
-    (prn (str/join (map #(str (m [% r])) (drop 492 (range (inc max-columns))))))))
+(defn init-state [rocks]
+  (reduce #(assoc %1 %2 \#) initial rocks))
 
 (def start [500 0])
 
@@ -39,24 +34,20 @@
         left   [(dec c) (inc r)]
         right  [(inc c) (inc r)]]
     (cond
-      (= (state bottom) \.)
-      (pour state bottom)
+      (= (state bottom) \.) (pour state bottom)
+      (nil? (state bottom)) nil  ;; sand reached endless void
+      (= (state left) \.)   (pour state left)
+      (= (state right) \.)  (pour state right)
+      (= sand start)        nil  ;; sand reached source
+      :else (assoc state sand \o))))
 
-      (nil? (state bottom))
-      nil
-
-      (= (state left) \.)
-      (pour state left)
-
-      (= (state right) \.)
-      (pour state right)
-
-      :else
-      (assoc state sand \o))))
-
-(def solution1
+(defn solve [rocks]
   (reduce (fn [acc x]
-            (if-let [res (pour acc [500 0])]
+            (if-let [res (pour acc start)]
               res
               (reduced x)))
-          state (range)))
+          (init-state rocks)
+          (range)))
+
+(def solution1 (solve rocks))
+(def solution2 (inc (solve (concat rocks floor))))
