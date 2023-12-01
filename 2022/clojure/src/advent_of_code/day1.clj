@@ -4,6 +4,12 @@
 
 (def content (raw-puzzle 1))
 
+(->> (str/split content #"\n\n")
+     (map #(map parse-long (str/split % #"\n")))
+     (map (partial reduce +))
+     (reduce max))
+
+
 (def solution1
   (->> (str/split content #"\n\n")
        (map #(map parse-long (str/split % #"\n")))
