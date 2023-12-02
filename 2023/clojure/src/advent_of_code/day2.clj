@@ -10,9 +10,8 @@
 
 (defn parse-game [game]
   (-> game
-      (str/split #": ")
-      (second)
-      (str/split #";")
+      (str/split #"[:;]")
+      (rest)
       (->> (map (fn [round]
                   (->> (str/split round #",")
                        (map str/trim)
@@ -36,3 +35,6 @@
        (map vals)
        (map (partial reduce *))
        (reduce +)))
+
+(solution1) ;; 2617
+(solution2) ;; 59795
