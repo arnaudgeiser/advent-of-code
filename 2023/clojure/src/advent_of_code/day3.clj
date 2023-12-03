@@ -50,9 +50,7 @@
        (into #{})))
 
 (defn adjacents [coord]
-  (filter (fn [[_ positions]]
-            (some (fn [position] ((neighbors coord) position)) positions))
-          numbers))
+  (filter (fn [[_ positions]] (some #((neighbors coord) %) positions)) numbers))
 
 (defn solution2 []
   (->> gears
