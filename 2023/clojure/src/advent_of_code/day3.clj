@@ -26,9 +26,9 @@
         (if (re-find #"[0-9]" s)
           (recur (rest coll) numbers (-> curr
                                          (update :number str s)
-                                         (update :positions (fnil conj #{}) coord)))
+                                         (update :neighbors (fnil set/union #{}) (neighbors coord))))
           (recur (rest coll) (if-let [number (:number curr)]
-                               (conj numbers [(parse-long number) (:positions curr)])
+                               (conj numbers [(parse-long number) (:neighbors curr)])
                                numbers) nil))))))
 
 (defn coords-of [re]
@@ -40,12 +40,12 @@
 (defn solution1 []
   (let [symbols (coords-of #"[^0-9\.]")]
     (->> numbers
-         (filter (fn [[_ positions]] (some (fn [position] (seq (set/intersection (neighbors position) symbols))) positions)))
+         (filter (fn [[_ positions]] (seq (set/intersection positions symbols))))
          (map first)
          (reduce +))))
 
 (defn adjacents [coord]
-  (filter (fn [[_ positions]] (some #((neighbors coord) %) positions)) numbers))
+  (filter (fn [[_ positions]] (positions coord)) numbers))
 
 (defn solution2 []
   (->> (coords-of #"\*")
