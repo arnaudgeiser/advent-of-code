@@ -49,12 +49,16 @@
          coord)
        (into #{})))
 
+(defn adjacents [coord]
+  (filter (fn [[_ positions]]
+            (some (fn [position] ((neighbors coord) position)) positions))
+          numbers))
+
 (defn solution2 []
   (->> gears
-       (keep (fn [gear]
-               (let [adjacents (filter (fn [[_ positions]] (some (fn [position] (contains? (neighbors gear) position)) positions)) numbers)]
-                 (when (= (count adjacents) 2)
-                   (reduce * (map first adjacents))))))
+       (map adjacents)
+       (filter #(= (count %) 2))
+       (map #(reduce * (map first %)))
        (reduce +)))
 
 (solution1) ;; 538046
