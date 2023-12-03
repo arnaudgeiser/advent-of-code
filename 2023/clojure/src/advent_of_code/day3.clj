@@ -31,29 +31,24 @@
                                (conj numbers [(parse-long number) (:positions curr)])
                                numbers) nil))))))
 
-(def symbols
+(defn coords-of [re]
   (->> (for [coord coords
-             :when (re-find #"[^0-9\.]" (str (get-in content coord)))]
+             :when (re-find re (str (get-in content coord)))]
          coord)
        (into #{})))
 
 (defn solution1 []
-  (->> numbers
-       (filter (fn [[_ positions]] (some (fn [position] (seq (set/intersection (neighbors position) symbols))) positions)))
-       (map first)
-       (reduce +)))
-
-(def gears
-  (->> (for [coord coords
-             :when (re-find #"\*" (str (get-in content coord)))]
-         coord)
-       (into #{})))
+  (let [symbols (coords-of #"[^0-9\.]")]
+    (->> numbers
+         (filter (fn [[_ positions]] (some (fn [position] (seq (set/intersection (neighbors position) symbols))) positions)))
+         (map first)
+         (reduce +))))
 
 (defn adjacents [coord]
   (filter (fn [[_ positions]] (some #((neighbors coord) %) positions)) numbers))
 
 (defn solution2 []
-  (->> gears
+  (->> (coords-of #"\*")
        (map adjacents)
        (filter #(= (count %) 2))
        (map #(reduce * (map first %)))
