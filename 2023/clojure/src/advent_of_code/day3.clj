@@ -1,21 +1,8 @@
 (ns advent-of-code.day3
   (:require [advent-of-code.core :refer [puzzle]]
-            [clojure.string :as str]
             [clojure.set :as set]))
 
 (def content (puzzle 3))
-
-(def content
-  ["467..114.."
-   "...*......"
-   "..35..633."
-   "......#..."
-   "617*......"
-   ".....+.58."
-   "..592....."
-   "......755."
-   "...$.*...."
-   ".664.598.."])
 
 (def coords
   (for [i (range (count content))
@@ -50,7 +37,25 @@
          coord)
        (into #{})))
 
-(->> numbers
-     (filter (fn [[_ positions]] (some (fn [position] (seq (set/intersection (neighbors position) symbols))) positions)))
-     (map first)
-     (reduce +))
+(defn solution1 []
+  (->> numbers
+       (filter (fn [[_ positions]] (some (fn [position] (seq (set/intersection (neighbors position) symbols))) positions)))
+       (map first)
+       (reduce +)))
+
+(def gears
+  (->> (for [coord coords
+             :when (re-find #"\*" (str (get-in content coord)))]
+         coord)
+       (into #{})))
+
+(defn solution2 []
+  (->> gears
+       (keep (fn [gear]
+               (let [adjacents (filter (fn [[_ positions]] (some (fn [position] (contains? (neighbors gear) position)) positions)) numbers)]
+                 (when (= (count adjacents) 2)
+                   (reduce * (map first adjacents))))))
+       (reduce +)))
+
+(solution1) ;; 538046
+(solution2) ;; 81709807
