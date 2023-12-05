@@ -3,9 +3,7 @@
             [clojure.string :as str]))
 
 (def content (puzzle 5))
-
 (def chain [:soil :fertilizer :water :light :temperature :humidity :location])
-
 (def seeds (-> (first content) (str/split #" ") rest (->> (map parse-long))))
 
 (def maps
@@ -18,14 +16,11 @@
        (zipmap chain)))
 
 (defn transport [seed mapping]
-  (let [a (-> (keep (fn [[src src-end diff]]
-                      (when (and (>= seed src)
-                                 (<= seed src-end))
-                        (+ seed diff))) mapping)
-              (first))]
-    (if (some? a)
-      a
-      seed)))
+  (or (some (fn [[src src-end diff]]
+              (when (and (>= seed src)
+                         (<= seed src-end))
+                (+ seed diff))) mapping)
+      seed))
 
 (defn solution1 []
   (->> (map #(reduce (fn [seed m] (transport seed (m maps))) % chain) seeds)
@@ -40,24 +35,22 @@
     (< (max s src) (min e src-end))
     (update :mapped conj [(+ (max s src) diff) (+ (min e src-end) diff)])))
 
-(defn reduce-transports [{:keys [unmapped mapped]} conversion]
-  (reduce (fn [acc' rr]
-            (let [res (map-transport rr conversion)]
-              (-> acc'
+(defn transport-reducer [{:keys [unmapped mapped]} conversion]
+  (reduce (fn [acc r]
+            (let [res (map-transport r conversion)]
+              (-> acc
                   (update :mapped concat (:mapped res))
                   (update :unmapped concat (:unmapped res)))))
           {:mapped mapped}
           unmapped))
 
+(defn step-reducer [acc step]
+  (reduce transport-reducer {:unmapped (concat (:mapped acc) (:unmapped acc))} (step maps)))
+
 (defn solution2 []
   (->> (partition-all 2 2 seeds)
        (map (fn [[seed size]] [seed (+ seed size)]))
-       (map (fn [r]
-              (reduce (fn [acc m]
-                        (let [res (reduce reduce-transports {:unmapped (concat (:mapped acc) (:unmapped acc))} (m maps))]
-                          res))
-                      {:unmapped [r]}
-                      chain)))
+       (map (fn [r] (reduce step-reducer {:unmapped [r]} chain)))
        (mapcat vals)
        (flatten)
        (apply min)))
