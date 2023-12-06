@@ -55,5 +55,5 @@
        (flatten)
        (apply min)))
 
-(solution1)  ;; 484023871
-(solution2)  ;; 46294175
+(time (solution1))  ;; 484023871
+(time (solution2))  ;; 46294175
