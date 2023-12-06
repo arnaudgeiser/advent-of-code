@@ -1,14 +1,20 @@
-(ns advent-of-code.day5
-  (:require [advent-of-code.core :refer [puzzle]]
-            [clojure.string :as str]))
+(ns advent-of-code.day5)
 
-(def races [[7 9] [15 40] [30 200]])
 (def races [[46 347] [82 1522] [84 1406] [79 1471]])
 
-(defn possible [race]
+(defn count-possible [race]
   (->> (map #(* % (- (first race) %)) (range (first race)))
        (filter #(> % (last race)))
        (count)))
 
-(->> (map possible races)
-     (reduce *))
+(defn solution1 []
+  (->> (map count-possible races)
+       (reduce *)))
+
+(def race [46828479 347152214061471])
+
+(defn solution2 []
+  (count-possible race))
+
+(solution1) ;; 449550
+(solution2) ;; 28360140
