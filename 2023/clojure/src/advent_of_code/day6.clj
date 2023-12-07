@@ -1,4 +1,4 @@
-(ns advent-of-code.day5)
+(ns advent-of-code.day6)
 
 (def races [[46 347] [82 1522] [84 1406] [79 1471]])
 
