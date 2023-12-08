@@ -6,6 +6,7 @@
   :dependencies [[org.clojure/clojure "1.11.0-alpha3"]
                  [org.clojure/math.combinatorics "0.1.6"]
                  [environ "1.2.0"]
-                 [clj-http "3.12.3"]]
+                 [clj-http "3.12.3"]
+                 [org.clojure/math.numeric-tower "0.0.5"]]
   :plugins [[lein-environ "1.2.0"]]
   :repl-options {:init-ns advent-of-code.core})
