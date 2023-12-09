@@ -4,11 +4,6 @@
 
 (def content (puzzle 9))
 
-(def content
-  ["0 3 6 9 12 15"
-   "1 3 6 10 15 21"
-   "10 13 16 21 30 45"])
-
 (defn parse-line [line]
  (mapv parse-long (str/split line #" ")))
 
@@ -21,16 +16,20 @@
              acc' (map (comp (partial apply -) reverse) acc')]
          (recur (conj acc acc')))))))
 
-(defn extrapolated-value [lines]
+(defn extrapolate-forward [lines]
  (let [reversed (reverse lines)]
     (reduce (fn [acc coll]
-              (when-not (last coll)
-                (prn reversed))
               (+ acc (or (last coll) 0))) 0 reversed)))
 
-(defn solution1 []
+(defn extrapolate-backward [lines]
+ (let [reversed (reverse lines)]
+    (reduce (fn [acc coll]
+              (- (or (first coll) 0) acc)) 0 reversed)))
+
+(defn solve [extrapolate-fn]
   (->> (map (comp expand parse-line) content)
-       (map extrapolated-value)
+       (map extrapolate-fn)
        (reduce +)))
 
-(prn (solution1))
+(def solution1 (solve extrapolate-forward)) ;; 1798691765
+(def solution2 (solve extrapolate-backward)) ;; 1104
