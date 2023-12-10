@@ -12,6 +12,7 @@
    ".L-J."
    "....."])
 
+#_
 (def content
   ["..F7."
    ".FJ|."
@@ -28,8 +29,6 @@
 
 (def start (ffirst (filter (fn [[_ pipe]] (= pipe \S)) pipes)))
 
-(def bends #{\L \J \7 \F})
-
 (def bend-directions
   {\S [:right :left :top :bottom]
    \L [:top :right]
@@ -39,40 +38,24 @@
    \- [:left :right]
    \| [:top :bottom]})
 
+(def bends (disj (set (keys bend-directions)) \- \|))
+(def tb-bends (conj bends \|))
+(def lf-bends (conj bends \-))
+
 (defn find-target [[x y] direction]
   (condp = direction
     :left
-    (loop [x x
-           y (dec y)]
-     (cond
-        (= (get-in content [x y]) \-)
-        (recur x (dec y))
-        (bends (get-in content [x y]))
-        [x y]))
+    (when (lf-bends (get-in content [x (dec y)]))
+      [x (dec y)])
     :right
-    (loop [x x
-           y (inc y)]
-      (cond
-         (= (get-in content [x y]) \-)
-         (recur x (inc y))
-         (bends (get-in content [x y]))
-         [x y]))
+    (when (lf-bends (get-in content [x (inc y)]))
+      [x (inc y)])
     :top
-    (loop [x (dec x)
-           y y]
-      (cond
-         (= (get-in content [x y]) \|)
-         (recur (dec x) y)
-         (bends (get-in content [x y]))
-         [x y]))
+    (when (tb-bends (get-in content [(dec x) y]))
+      [(dec x) y])
     :bottom
-    (loop [x (inc x)
-           y y]
-      (cond
-         (= (get-in content [x y]) \|)
-         (recur (inc x) y)
-         (bends (get-in content [x y]))
-         [x y]))))
+    (when (tb-bends (get-in content [(inc x) y]))
+      [(inc x) y])))
 
 (defn find-target2 [[x y :as coord] direction cost]
   (when-let [[x' y' :as target] (find-target coord direction)]
@@ -91,10 +74,10 @@
          news (remove (fn [[bend]] (visited bend)) bends)
          unvisited' (sort #(compare (second %1) (second %2)) (concat (rest unvisited) news))]
      (if (seq unvisited')
-       (recur (update computed (first to-follow) (fnil min Integer/MAX_VALUE) (second to-follow))
+       (recur (update computed (first to-follow) (fnil max 0) (second to-follow))
               (conj visited (first to-follow))
               unvisited')
-       (assoc computed (first to-follow) (second to-follow))))))
+       (update computed (first to-follow) (fnil max 0) (second to-follow))))))
 
 (->> (explore)
      (map second)
