@@ -87,7 +87,7 @@
       (odd? crossed))))
 
 (defn solution2 []
-  (->> (reduce (fn [acc point] (conj acc (crossed? point))) [] pipes)
+  (->> (map crossed? pipes)
        (filter identity)
        (count)))
 
