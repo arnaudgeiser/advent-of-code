@@ -4,46 +4,34 @@
 
 (def content (puzzle 11))
 
-#_
-(def content ["...#......"
-              ".......#.."
-              "#........."
-              ".........."
-              "......#..."
-              ".#........"
-              ".........#"
-              ".........."
-              ".......#.."
-              "#...#....."])
-
-(defn spaces? [line]
-  (every? (partial = \.) line))
-
-(defn expand [universe]
-  (reduce (fn [acc line]
-            (cond-> (conj acc line)
-              (spaces? line)
-              (conj line))) [] universe))
-
-(defn transpose [universe]
-  (apply map vector universe))
-
-(def expanded
-  (->> content
-       expand
-       transpose
-       expand
-       transpose
-       vec))
+(defn spaces? [line] (every? (partial = \.) line))
+(defn transpose [universe] (apply map vector universe))
+(defn empties [universe] (vec (keep-indexed #(when (spaces? %2) %1) universe)))
+(def empty-rows (empties content))
+(def empty-columns (empties (transpose content)))
 
 (def locations
- (for [x (range (count expanded))
-       y (range (count (first expanded)))
-       :let [v (get-in expanded [x y])]
-       :when (= v \#)]
-   [x y]))
+  (for [x (range (count content))
+        y (range (count (first content)))
+        :let [v (get-in content [x y])]
+        :when (= v \#)]
+    [x y]))
 
-(/ (->> (comb/permuted-combinations locations 2)
-      set
-      (map (fn [[[x y] [x' y']]] (+ (Math/abs (- x x')) (Math/abs (- y y')))))
-      (reduce +)) 2)
+(defn expansions [[x y] [x' y']]
+  (->> (concat (filter #(< (min x x') % (max x x')) empty-rows)
+               (filter #(< (min y y') % (max y y')) empty-columns))
+       (count)))
+
+(defn solve [expansion-factor]
+  (->> (comb/permuted-combinations locations 2)
+       (map set)
+       (set)
+       (map #(into [] %))
+       (map (fn [[[x y :as c] [x' y' :as c2]]]
+              (+ (Math/abs (- x x'))
+                 (Math/abs (- y y'))
+                 (* (dec expansion-factor) (expansions c c2)))))
+       (reduce +)))
+
+(solve 2)
+(solve 1000000)
