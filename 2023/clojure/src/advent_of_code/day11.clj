@@ -1,6 +1,5 @@
 (ns advent-of-code.day11
-  (:require [advent-of-code.core :refer [puzzle]]
-            [clojure.math.combinatorics :as comb]))
+  (:require [advent-of-code.core :refer [puzzle]]))
 
 (def content (puzzle 11))
 
@@ -23,7 +22,7 @@
        (count)))
 
 (defn solve [expansion-factor]
-  (->> (comb/permuted-combinations locations 2)
+  (->> (for [a locations b locations :when (pos? (compare a b))] [a b])
        (map set)
        (set)
        (map #(into [] %))
