@@ -1,21 +1,7 @@
 (ns advent-of-code.day14
-  (:require [advent-of-code.core :refer [puzzle]]
-            [clojure.string :as str]))
+  (:require [advent-of-code.core :refer [puzzle]]))
 
-(def content (puzzle 14))
-
-#_(def content ["O....#...."
-                "O.OO#....#"
-                ".....##..."
-                "OO.#O....O"
-                ".O.....O#."
-                "O.#..O.#.#"
-                "..O..#O..O"
-                ".......O.."
-                "#....###.."
-                "#OO..#...."])
-
-(def content (mapv #(mapv char %) content))
+(def content (mapv #(mapv char %) (puzzle 14)))
 
 (def coords
   (for [x (range (count content))
@@ -36,11 +22,6 @@
               :east [0 1]
               :west [0 -1]})
 
-(def cycle [:north :west :south :east])
-(def cycles (mapcat identity (repeat cycle)))
-
-(last (take 100001 cycles))
-
 (def move
   (memoize
    (fn [map dir]
@@ -54,16 +35,17 @@
              map
              (if (#{:south :east} dir) (reverse coords) coords)))))
 
-(def cycle [:north :west :south :east])
+(def cycle-def1 [:north])
+(def cycle-def2 [:north :west :south :east])
 
-(defn do-cycle [map]
-  (reduce (fn [map' dir] (move map' dir)) map cycle))
+(defn do-cycle [map cycle-def]
+  (reduce (fn [map' dir] (move map' dir)) map cycle-def))
 
 (defn learn [map]
   (loop [curr map
          knows-to-index {}
          index 0]
-    (let [curr' (do-cycle curr)]
+    (let [curr' (do-cycle curr cycle-def2)]
       (if (seq knows-to-index)
         (if-let [idx (knows-to-index curr')]
           [(- index idx) idx]
@@ -74,13 +56,22 @@
                (assoc knows-to-index curr' index)
                (inc index))))))
 
-#_#_#_(let [[nb-cycles after] (learn content)]
-        (+ after (rem (- 1000000000 after) nb-cycles)))
+(defn required-cycles [world]
+  (let [[nb-cycles after] (learn world)]
+    (+ after (rem (- 1000000000 after) nb-cycles))))
 
-    (defn solve []
-      (reduce (fn [acc v] (do-cycle acc)) content (range 109)))
+(defn score [world]
+  (let [cnt (count world)]
+    (->> (map #(* (- cnt %) (count (filter (fn [v] (= v \O)) (nth world %)))) (range cnt))
+         (reduce +))))
 
-  (let [solved (solve)
-        cnt (count solved)]
-    (->> (map #(* (- cnt %) (count (filter (fn [v] (= v \O)) (nth solved %)))) (range cnt))
-         (reduce +)))
+(defn solution1 [world]
+  (score (do-cycle world cycle-def1)))
+
+(defn solution2 [world]
+  (let [nb-cycles (required-cycles world)
+        result (nth (iterate #(do-cycle % cycle-def2) world) nb-cycles)]
+    (score result)))
+
+(solution1 content) ;; 109654
+(solution2 content) ;; 94876
