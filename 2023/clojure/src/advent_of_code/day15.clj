@@ -8,8 +8,6 @@
 
 (def lines (str/split content #","))
 
-(def line "HASH")
-
 (defn compute-hash [line]
   (reduce (fn [acc c]
             (let [i (+ acc (int c))
@@ -18,4 +16,18 @@
               i)) 0 line))
 
 (->> (map compute-hash lines)
+     (reduce +))
+
+(def res (reduce (fn [acc line]
+                   (let [[label sign fl] (rest (re-find #"(.*)([=-])(.*)" line))
+                         hash (compute-hash label)]
+                     (condp = sign
+                       "=" (update acc hash (fnil assoc {}) label (parse-long fl))
+                       "-" (do
+                             (update acc hash dissoc label)))))
+                 {}
+                 lines))
+
+(->> (mapcat (fn [fp]
+               (map-indexed (fn [slot [_ fl]] (* (inc fp) (inc slot) fl)) (get res fp)))  (range 256))
      (reduce +))
