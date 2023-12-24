@@ -42,9 +42,9 @@
   (- (inc area) (/ outside-points 2)))
 
 (defn solve [parse-fn]
-  (let [vertices (doall (parse-vertices parse-fn))
-        area (shoelace vertices)
-        epoints (exterior-points vertices)]
+  (let [vertices (parse-vertices parse-fn)
+        area     (shoelace vertices)
+        epoints  (exterior-points vertices)]
     (+ epoints (interior-points area epoints))))
 
 (solve parse-part1) ;; 39194
