@@ -81,7 +81,6 @@
       (let [[workflow-id workflow] (first workflows)
             res (evaluate-rule2 workflow (get rules workflow-id))
             accepted' (filter (fn [[wid]] (= wid "A")) res)
-            refused' (filter (fn [[wid]] (= wid "R")) res)
             workflows' (filter (fn [[wid]] (not (#{"A" "R"} wid))) res)]
         (recur (concat (rest workflows) workflows')
                (+ accepted (reduce + (map (comp block-size second) accepted')))))
