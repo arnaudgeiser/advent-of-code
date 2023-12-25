@@ -4,30 +4,7 @@
 
 (def content (puzzle 19))
 
-#_(def content
-    ["px{a<2006:qkq,m>2090:A,rfg}"
-     "pv{a>1716:R,A}"
-     "lnx{m>1548:A,A}"
-     "rfg{s<537:gd,x>2440:R,A}"
-     "qs{s>3448:A,lnx}"
-     "qkq{x<1416:A,crn}"
-     "crn{x>2662:A,R}"
-     "in{s<1351:px,qqz}"
-     "qqz{s>2770:qs,m<1801:hdj,R}"
-     "gd{a>3333:R,R}"
-     "hdj{m>838:A,pv}"
-     ""
-     "{x=787,m=2655,a=1222,s=2876}"
-     "{x=1679,m=44,a=2067,s=496}"
-     "{x=2036,m=264,a=79,s=2244}"
-     "{x=2461,m=1339,a=466,s=291}"
-     "{x=2127,m=1623,a=2188,s=1013}"])
-
-(def rules (first (split-with #(not= % "") content)))
-(def workflows (rest (second (split-with #(not= % "") content))))
-
-(defn rule? [s]
-  (str/includes? s ":"))
+(defn rule? [s] (str/includes? s ":"))
 
 (defn parse-rule [acc s]
   (let [[expr rest] (str/split s #":" 2)
@@ -47,18 +24,13 @@
   (let [[name rule] (str/split s #"\{")]
     [name (parse-rule {} (apply str (butlast rule)))]))
 
-(def rules'
-  (->> (map parse-name-rule rules)
-       (into {})))
-
 (defn parse-workflow [s]
   (let [[_ & r] (re-find #"x=([0-9]*),m=([0-9]*),a=([0-9]*),s=([0-9]*)" s)
         [x m a s] (mapv parse-long r)]
     {:x x :m m :a a :s s}))
 
-(def workflows' (mapv parse-workflow workflows))
-
-(get rules' "in")
+(def rules (into {} (map parse-name-rule (first (split-with #(not= % "") content)))))
+(def workflows (map parse-workflow (rest (second (split-with #(not= % "") content)))))
 
 (defn evaluate-rule [workflow {:keys [expr left right] :as r}]
   (let [[c sign v] expr]
@@ -71,11 +43,11 @@
   (loop [workflow-id "in"]
     (if (#{"A" "R"} workflow-id)
       workflow-id
-      (let [res (evaluate-rule workflow (get rules' workflow-id))]
+      (let [res (evaluate-rule workflow (get rules workflow-id))]
         (recur res)))))
 
 (defn solution1 []
-  (->> (filter #(= "A" (evaluate-workflow %)) workflows')
+  (->> (filter #(= "A" (evaluate-workflow %)) workflows)
        (mapcat vals)
        (reduce +)))
 
@@ -85,7 +57,6 @@
   (let [[c sign v] expr
         [begin end] (c workflow)
         sign-fn (if (= sign :<) < >)
-        ;; I check on sign "v" is probably missing here...
         left-begin-end  (if (sign-fn begin v end) [begin (dec v)] [(inc v) end])
         right-begin-end (if (sign-fn begin v end) [v end] [begin v])]
     (cond-> []
@@ -103,20 +74,18 @@
        (map (fn [[a b]] (inc (Math/abs (- a b)))))
        (reduce *)))
 
-(defn solution2 [workflow]
-  (loop [workflows [workflow]
-         accepted 0
-         refused []]
+(defn solution2 []
+  (loop [workflows [init]
+         accepted 0]
     (if (seq workflows)
       (let [[workflow-id workflow] (first workflows)
-            res (evaluate-rule2 workflow (get rules' workflow-id))
-            accepted' (filter (fn [[workflow-id]] (= workflow-id "A")) res)
-            refused' (filter (fn [[workflow-id]] (= workflow-id "R")) res)
-            workflows' (filter (fn [[workflow-id]] (not (#{"A" "R"} workflow-id))) res)]
+            res (evaluate-rule2 workflow (get rules workflow-id))
+            accepted' (filter (fn [[wid]] (= wid "A")) res)
+            refused' (filter (fn [[wid]] (= wid "R")) res)
+            workflows' (filter (fn [[wid]] (not (#{"A" "R"} wid))) res)]
         (recur (concat (rest workflows) workflows')
-               (+ accepted (reduce + (map (comp block-size second) accepted')))
-               (concat refused refused')))
+               (+ accepted (reduce + (map (comp block-size second) accepted')))))
       accepted)))
 
 (solution1) ;; 391132
-(solution2 init) ;; 128163929109524
+(solution2) ;; 128163929109524
