@@ -4,20 +4,6 @@
 
 (def content (puzzle 20))
 
-(def content
-  ["broadcaster -> a, b, c"
-   "%a -> b"
-   "%b -> c"
-   "%c -> inv"
-   "&inv -> a"])
-
-#_(def content
-    ["broadcaster -> a"
-     "%a -> inv, con"
-     "&inv -> b"
-     "%b -> con"
-     "&con -> output"])
-
 (defn parse-line [line]
   (let [[_ source dest] (re-find #"(.*) -> (.*)" line)
         dests (str/split dest #", ")
@@ -59,13 +45,13 @@
           machine
           dests))
 
-(defn conjunction-module [machine module-name src-pulse {:keys [memory dests]}]
+(defn conjunction-module [machine module-name {:keys [memory dests]}]
   (let [related (vals memory)
         high? (and (seq related) (every? (partial = :high) related))
         pulse (if high? :low :high)]
     {:machine (reduce
                (fn [machine dest]
-                 (update-memory machine src-pulse module-name dest))
+                 (update-memory machine pulse module-name dest))
                machine
                dests)
      :pulse pulse}))
@@ -73,49 +59,48 @@
 (defn handle-module [machine pulse module-name]
   (loop [machine machine
          queue [[module-name pulse]]
-         lows 0
+         lows 1
          highs 0]
     (if (seq queue)
       (let [[module-name pulse] (first queue)
             {:keys [type memory state dests] :as module} (get machine module-name)]
-        #_(prn (first queue) dests type module-name (get machine module-name))
         (case type
           :broadcaster
           (recur machine
                  (concat (rest queue) (mapv (fn [dest] [dest pulse]) dests))
-                 (if (= pulse :low) (inc lows) lows)
-                 (if (= pulse :high) (inc highs) highs))
+                 (+ lows (count dests))
+                 highs)
           :flipflop
           (let [pulse' (if (= :off state) :high :low)
                 machine (flip-flop-module machine pulse module-name module)]
             (recur
              machine
              (if (= pulse :high) (rest queue) (concat (rest queue) (mapv (fn [dest] [dest pulse']) dests)))
-             (if (= pulse :low) (inc lows) lows)
-             (if (= pulse :high) (inc highs) highs)))
+             (if (and (= pulse :low) (= pulse' :low)) (+ lows (count dests)) lows)
+             (if (and (= pulse :low) (= pulse' :high)) (+ highs (count dests)) highs)))
           :conjunction
-          (let [res (conjunction-module machine module-name pulse module)
+          (let [res (conjunction-module machine module-name module)
                 machine' (:machine res)
                 pulse' (:pulse res)]
             (recur
              machine'
              (concat (rest queue) (mapv (fn [dest] [dest pulse']) dests))
-             (if (= pulse :low) (inc lows) lows)
-             (if (= pulse :high) (inc highs) highs)))
+             (if (= pulse' :low) (+ lows (count dests)) lows)
+             (if (= pulse' :high) (+ highs (count dests)) highs)))
           (recur machine
                  (rest queue)
                  lows
-                 (if (= pulse :high) (inc highs) highs))))
+                 highs)))
       [machine lows highs])))
 
 (defn press-button [machine]
   (handle-module machine :low "broadcaster"))
 
-(press-button (first (press-button (first (press-button (first (press-button machine)))))))
-
-#_(->> (reduce (fn [[machine lows highs] _]
+(defn solution1 []
+  (->> (reduce (fn [[machine lows highs] _]
                  (let [[machine' lows' highs'] (press-button machine)]
                    [machine' (+ lows lows') (+ highs highs')])) [machine 0 0] (range 1000))
        (rest)
-       (apply *)
-       (prn))
+       (apply *)))
+
+(solution1) ;; 867118762
