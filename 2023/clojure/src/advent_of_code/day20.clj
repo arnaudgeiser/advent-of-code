@@ -16,6 +16,11 @@
       [name {:dests dests :type :conjunction :memory {}}]
       ["broadcaster" {:dests dests :type :broadcaster}])))
 
+(defn- update-con [machine target]
+  (if (get-in machine [:con target])
+    machine
+    (assoc-in machine [:con target] (:n machine))))
+
 (def targets
   (->> (map parse-line content)
        (mapcat (fn [[module-name {:keys [dests]}]] (map (fn [target] [target module-name]) dests)))
@@ -35,8 +40,6 @@
   (reduce (fn [machine dest]
             (let [pulse' (if (= :off state) :high :low)
                   state' (if (= :off state) :on :off)]
-              #_(when (= module-name "b")
-                  (prn "sending :" module-name " " pulse'  "-> " dest))
               (if (not= pulse :high)
                 (-> (update-memory machine pulse' module-name dest)
                     (update module-name assoc :state state'))
@@ -49,11 +52,13 @@
   (let [related (vals memory)
         high? (and (seq related) (every? (partial = :high) related))
         pulse (if high? :low :high)]
-    {:machine (reduce
-               (fn [machine dest]
-                 (update-memory machine pulse module-name dest))
-               machine
-               dests)
+    {:machine (cond-> (reduce
+                       (fn [machine dest]
+                         (update-memory machine pulse module-name dest))
+                       machine
+                       dests)
+                (= pulse :high)
+                (update-con module-name))
      :pulse pulse}))
 
 (defn handle-module [machine pulse module-name]
@@ -63,7 +68,7 @@
          highs 0]
     (if (seq queue)
       (let [[module-name pulse] (first queue)
-            {:keys [type memory state dests] :as module} (get machine module-name)]
+            {:keys [type state dests] :as module} (get machine module-name)]
         (case type
           :broadcaster
           (recur machine
@@ -103,4 +108,17 @@
        (rest)
        (apply *)))
 
+(def gates ["fv" "kk" "vt" "xr"])
+
+(defn all-gates [machine]
+  (map #(get-in machine [:con %] 0) gates))
+
+(defn solution2 []
+  (loop [machine (assoc machine :con {} :n 0)]
+    (let [gate-vals (all-gates machine)]
+      (if (some zero? gate-vals)
+        (recur (first (press-button (update machine :n inc))))
+        (reduce * gate-vals)))))
+
 (solution1) ;; 867118762
+(solution2) ;; 217317393039529
