@@ -1,23 +1,8 @@
 (ns advent-of-code.day21
-  (:require [advent-of-code.core :refer [puzzle]]
-            [clojure.string :as str]))
+  (:require [advent-of-code.core :refer [puzzle]]))
 
 (def content (mapv vec (puzzle 21)))
-
-#_(def content ["..........."
-                ".....###.#."
-                ".###.##..#."
-                "..#.#...#.."
-                "....#.#...."
-                ".##..S####."
-                ".##..#...#."
-                ".......##.."
-                ".##.#.####."
-                ".##..##.##."
-                "..........."])
-
 (def start [(/ (dec (count content)) 2) (/ (dec (count (first content))) 2)])
-
 (def deltas [[0 1] [0 -1] [1 0] [-1 0]])
 
 (defn garden-plots [point]
@@ -26,16 +11,10 @@
         :when (#{\. \S} (get-in content point'))]
     point'))
 
-(def delta {:U [-1 0], :R [0 1], :D [1 0], :L [0 -1]})
-
-(defn- moves [valid? matrix pos]
-  (for [move [:U :R :D :L]
-        :let [pos' (mapv + pos (delta move))]
-        :when (valid? pos')
-        :when (= \. (get-in matrix pos'))]
-    pos'))
-
-(count (nth (iterate #(set (mapcat garden-plots %)) [start]) 64))
+(defn solution1 []
+  (-> (iterate #(set (mapcat garden-plots %)) [start])
+      (nth 64)
+      (count)))
 
 ;; Totally "adapted" (stolen) from Jan Szejko:
 ;; https://github.com/janek37/advent-of-code/blob/main/2023/day21.py
@@ -46,14 +25,11 @@
 
 (defn- to-graph [matrix]
   (let [max-y  (count matrix)
-        max-x  (count (first matrix))
-        valid? (fn [[y x]]
-                 (and (<= 0 y (dec max-y))
-                      (<= 0 x (dec max-x))))]
+        max-x  (count (first matrix))]
     (into {} (for [y (range max-y), x (range max-x)
                    :let [pos [y x]]
                    :when (= \. (get-in matrix pos))
-                   :let [neighbors (moves valid? matrix pos)]]
+                   :let [neighbors (garden-plots pos)]]
                (hash-map pos neighbors)))))
 
 ;; Update the positions set passed in with new points. This is the part of the
@@ -79,7 +55,6 @@
 ;; necessary computation.
 (defn- get-dests-inf [graph width height start steps]
   (loop [i 0, positions #{start}]
-    (prn i "/" steps)
     (if (= i steps)
       positions
       (recur (inc i) (update-positions graph width height positions)))))
@@ -124,6 +99,8 @@
         get-positions-by-grid
         (calculate (quot steps width)))))
 
-#_(find-plots-inf 26501365 (find-start content))
+(defn solution2 []
+  (find-plots-inf 26501365 (find-start content)))
 
-(prn "a")
+(solution1) ;; 3722
+(solution2) ;; 614864614526014
