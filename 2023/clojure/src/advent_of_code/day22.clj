@@ -4,34 +4,6 @@
 
 (def content (puzzle 22))
 
-#_
-(def content
-  ["1,0,1~1,2,1"
-   "0,0,2~2,0,2"
-   "0,2,3~2,2,3"
-   "0,0,4~0,2,4"
-   "2,0,5~2,2,5"
-   "0,1,6~2,1,6"
-   "1,1,8~1,1,9"])
-
-#_#_#_#_(def content
-          ["0,0,1~0,0,1"
-           "0,0,3~0,0,3"])
-
-      (def content
-        ["0,0,1~0,0,10"
-         "0,1,1~0,1,10"
-         "0,0,300~0,1,300"])
-
-    (def content
-      ["0,0,1~0,0,10"
-       "0,0,300~0,1,300"
-       "1,0,50~1,0,50"])
-
-  (def content
-    ["0,0,1~0,0,10"
-     "0,0,300~0,1,300"])
-
 (defn parse-block [line]
   (mapv #(mapv parse-long (str/split % #",")) (str/split line #"~")))
 
@@ -45,11 +17,7 @@
              (or (<= y1 y1' y2)
                  (<= y1 y2' y2)
                  (<= y1' y1 y2')
-                 (<= y1' y2 y2'))
-             (or (<= z1 z1' z2)
-                 (<= z1 z2' z2)
-                 (<= z1' z1 z2')
-                 (<= z1' z2 z2'))))
+                 (<= y1' y2 y2'))))
           bricks))
 
 (def res
@@ -69,18 +37,8 @@
            :supported-by {}}
           (sort-by (fn [[[] [_ _ z]]] z) (mapv parse-block content))))
 
-(def cnt (count content))
-
-(defn fall-bricks [brick]
-  (let [supported ((:supports res) brick)]
-    (filter #(= (count ((:supported-by res) %)) 1) supported)))
-
 (defn fall? [bricks brick]
   (every? (fn [b] (bricks b)) ((:supported-by res) brick)))
-
-(->> (mapcat second (:world res))
-     (filter (fn [brick] (every? #(> (count ((:supported-by res) %)) 1) ((:supports res) brick))))
-     (count))
 
 (defn count-falls [brick]
   (loop [queue [brick]
@@ -89,16 +47,19 @@
       (let [supported (filter (partial fall? bricks) ((:supports res) (first queue)))]
         (recur (concat (rest queue) (remove bricks supported))
                (set (concat bricks supported))))
-      (do
-        (prn (dec (count bricks)))
-        (dec (count bricks))))))
+      (dec (count bricks)))))
 
-#_(->> (mapcat val res)
-       (map second)
-       (filter identity)
-       (count))
+(def bricks (mapcat second (:world res)))
 
-(->> (mapcat second (:world res))
-     (map count-falls)
-     (reduce +)
-     (prn))
+(defn solution1 []
+ (->> bricks
+      (filter (fn [brick] (every? #(> (count ((:supported-by res) %)) 1) ((:supports res) brick))))
+      (count)))
+
+(defn solution2 []
+ (->> bricks
+      (map count-falls)
+      (reduce +)))
+
+(solution1) ;; 443
+(solution2) ;; 69915
