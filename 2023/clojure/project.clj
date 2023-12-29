@@ -10,4 +10,5 @@
                  [org.clojure/math.numeric-tower "0.0.5"]
                  [org.clojure/data.priority-map "1.1.0"]]
   :plugins [[lein-environ "1.2.0"]]
+  :jvm-opts ["-Xss10m"]
   :repl-options {:init-ns advent-of-code.core})
