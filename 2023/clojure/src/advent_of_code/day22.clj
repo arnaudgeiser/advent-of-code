@@ -4,6 +4,7 @@
 
 (def content (puzzle 22))
 
+#_
 (def content
   ["1,0,1~1,2,1"
    "0,0,2~2,0,2"
@@ -74,25 +75,23 @@
   (let [supported ((:supports res) brick)]
     (filter #(= (count ((:supported-by res) %)) 1) supported)))
 
-(defn fall? [brick]
-  (prn brick ((:supported-by res) brick))
-  (= (count ((:supported-by res) brick)) 1))
+(defn fall? [bricks brick]
+  (every? (fn [b] (bricks b)) ((:supported-by res) brick)))
 
 (->> (mapcat second (:world res))
      (filter (fn [brick] (every? #(> (count ((:supported-by res) %)) 1) ((:supports res) brick))))
      (count))
 
 (defn count-falls [brick]
-  (let [fall-bricks (fall-bricks brick)]
-    (if (seq fall-bricks)
-      (loop [queue fall-bricks
-             bricks (set fall-bricks)]
-        (if (seq queue)
-          (let [supported ((:supports res) (first queue))]
-            (recur (concat (rest queue) supported)
-                   (set (concat bricks supported))))
-          (count bricks)))
-      0)))
+  (loop [queue [brick]
+         bricks #{brick}]
+    (if (seq queue)
+      (let [supported (filter (partial fall? bricks) ((:supports res) (first queue)))]
+        (recur (concat (rest queue) (remove bricks supported))
+               (set (concat bricks supported))))
+      (do
+        (prn (dec (count bricks)))
+        (dec (count bricks))))))
 
 #_(->> (mapcat val res)
        (map second)
@@ -101,5 +100,5 @@
 
 (->> (mapcat second (:world res))
      (map count-falls)
-     #_
-     (reduce +))
+     (reduce +)
+     (prn))
