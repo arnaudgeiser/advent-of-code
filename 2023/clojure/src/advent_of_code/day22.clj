@@ -4,14 +4,14 @@
 
 (def content (puzzle 22))
 
-#_(def content
-    ["1,0,1~1,2,1"
-     "0,0,2~2,0,2"
-     "0,2,3~2,2,3"
-     "0,0,4~0,2,4"
-     "2,0,5~2,2,5"
-     "0,1,6~2,1,6"
-     "1,1,8~1,1,9"])
+(def content
+  ["1,0,1~1,2,1"
+   "0,0,2~2,0,2"
+   "0,2,3~2,2,3"
+   "0,0,4~0,2,4"
+   "2,0,5~2,2,5"
+   "0,1,6~2,1,6"
+   "1,1,8~1,1,9"])
 
 #_#_#_#_(def content
           ["0,0,1~0,0,1"
@@ -51,8 +51,6 @@
                  (<= z1' z2 z2'))))
           bricks))
 
-(collisions [[0 0 1] [2 0 1]] [[[1 0 1] [1 2 1]]])
-
 (def res
   (reduce (fn [{:keys [world supported-by supports]} [[x1 y1 z1] [x2 y2 z2] :as brick]]
             (loop [z' z1]
@@ -72,11 +70,36 @@
 
 (def cnt (count content))
 
+(defn fall-bricks [brick]
+  (let [supported ((:supports res) brick)]
+    (filter #(= (count ((:supported-by res) %)) 1) supported)))
+
+(defn fall? [brick]
+  (prn brick ((:supported-by res) brick))
+  (= (count ((:supported-by res) brick)) 1))
+
 (->> (mapcat second (:world res))
-     (filter (fn [brick] (prn ((:supports res) brick)) (every? #(> (count ((:supported-by res) %)) 1) ((:supports res) brick))))
+     (filter (fn [brick] (every? #(> (count ((:supported-by res) %)) 1) ((:supports res) brick))))
      (count))
+
+(defn count-falls [brick]
+  (let [fall-bricks (fall-bricks brick)]
+    (if (seq fall-bricks)
+      (loop [queue fall-bricks
+             bricks (set fall-bricks)]
+        (if (seq queue)
+          (let [supported ((:supports res) (first queue))]
+            (recur (concat (rest queue) supported)
+                   (set (concat bricks supported))))
+          (count bricks)))
+      0)))
 
 #_(->> (mapcat val res)
        (map second)
        (filter identity)
        (count))
+
+(->> (mapcat second (:world res))
+     (map count-falls)
+     #_
+     (reduce +))
