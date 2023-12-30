@@ -4,7 +4,6 @@
 
 (def content (puzzle 23))
 
-#_
 (def content
   ["#.#####################"
    "#.......#########...###"
@@ -44,20 +43,22 @@
         :when (#{\. \> \^ \v \<} v)]
     coord))
 
-(defn dfs [visited path]
-  (loop [neighs (remove visited (neighbors (last path)))
-         paths [path]]
-    (if (seq neighs)
-      (recur (rest neighs)
-             (concat paths (dfs (conj visited (first neighs)) (conj path (first neighs)))))
-      paths))
-  #_
- (loop [visited visited
-        path path]
-   (for [n (remove visited (neighbors (last path)))]
-     (dfs (conj visited n) (conj path n)))))
+(defn paths-part1 [start-pos]
+  (loop [[[seen pos] & rem :as stack] (list [#{} start-pos])
+         result []]
+    (cond
+      (nil? seen)
+      result
 
-(->> (dfs #{} [start])
-     (filter #(= end (last %)))
-     (map (comp dec count))
-     (apply max))
+      (= pos end)
+      (recur rem
+             (conj result (count seen)))
+
+      :else
+      (recur (concat rem (map (fn [pos'] [(conj seen pos) pos']) (remove seen (neighbors pos))))
+             result))))
+
+(defn solution1 []
+  (apply max (paths-part1 start)))
+
+(solution1) ;; 94
