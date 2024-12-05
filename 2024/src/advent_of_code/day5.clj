@@ -26,11 +26,10 @@
        (map parse-long)
        (reduce +)))
 
-(defn reorder [mapping update]
+(defn reorder [update]
   (reduce (fn [acc page]
             (let [pos (find-position acc page mapping)
                   [l r] (split-at pos acc)]
-              (prn pos page)
               (vec (concat l [page] r))))
           [] update))
 
@@ -45,10 +44,6 @@
        (sum-middle)))
 
 (def solution2
-  (let [[pages updates] (split-with #(not= "" %) content)
-        updates (map #(str/split % #",") (rest updates))
-        mapping (reduce #(let [[f s] (str/split %2 #"\|")]
-                           (update %1 f (fnil conj #{}) s)) {} pages)]
-    (->> (remove valid-update? updates)
-         (map (partial reorder mapping))
-         (sum-middle))))
+  (->> (remove valid-update? updates)
+       (map reorder)
+       (sum-middle)))
